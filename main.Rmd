@@ -7,3 +7,75 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+## Load libraries
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+```
+
+## Load helper scripts (functions)
+
+```{r}
+source("./scripts/wrangling.R")
+```
+
+## Load data
+
+### Set course path
+
+```{r}
+course <- 'BIOL_228_4001'
+course_directory <- paste0("/Volumes/Departments/Extended\ Studies/DEHistData/Analytics_BC/", course, '/input/')
+```
+
+### Set data paths
+
+```{r}
+dynamics_path <- paste0(course_directory, "dynamics.csv")
+grades_path <-paste0(course_directory, "grades.csv")
+items_path <- paste0(course_directory, "items.csv")
+statics_path <- paste0(course_directory, "statics.csv")
+submissions_path <- paste0(course_directory, "submissions.csv")
+```
+
+### Read data into memory
+
+```{r}
+dynamics <- read.csv(dynamics_path)
+grades <- read.csv(grades_path)
+items <- read.csv(items_path)
+statics <- read.csv(statics_path)
+submissions <- read.csv(submissions_path)
+```
+
+## Process data
+
+```{r}
+length(unique(dynamics$StudentName))
+length(unique(grades$StudentName))
+length(unique(items$StudentName))
+length(unique(statics$StudentName))
+# length(unique(dynamics$StudentName))
+```
+
+### Fix time formatting in `dynamics`
+
+```{r}
+dynamics_cleaned <- fix_time_band_24hr(dynamics)
+dynamics_cleaned <- fix_week_level(dynamics_cleaned)
+dynamics_cleaned <- fix_day_of_week(dynamics_cleaned)
+```
+
+
+
+
+
+
+
+
+
+
+
+
