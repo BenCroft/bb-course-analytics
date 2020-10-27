@@ -27,7 +27,8 @@ fix_week_level <- function(my_data) {
         WeekLevel == "Week 14" ~ "14",
         WeekLevel == "Week 15" ~ "15",
         WeekLevel == "Week 16" ~ "16",
-        WeekLevel == "Week 16 and After" ~ "16+"
+        WeekLevel == "Week 16 and After" ~ "16+",
+        WeekLevel == "After end of Term" ~ "16+"
       )
     )
 }
@@ -43,37 +44,37 @@ fix_time_band_24hr <- function(my_data) {
   df <- my_data %>%
     mutate(
       TimeDescription = case_when(
-        TimeBandDescription24Hour == "12 am - 12:59 am" ~ "00",
-        TimeBandDescription24Hour == "1 am - 1:59 am" ~ "01",
-        TimeBandDescription24Hour == "2 am - 2:59 am" ~ "02",
-        TimeBandDescription24Hour == "3 am - 3:59 am" ~ "03",
-        TimeBandDescription24Hour == "4 am - 4:59 am" ~ "04",
-        TimeBandDescription24Hour == "5 am - 5:59 am" ~ "05",
-        TimeBandDescription24Hour == "6 am - 6:59 am" ~ "06",
-        TimeBandDescription24Hour == "7 am - 7:59 am" ~ "07",
-        TimeBandDescription24Hour == "8 am - 8:59 am" ~ "08",
-        TimeBandDescription24Hour == "9 am - 9:59 am" ~ "09",
-        TimeBandDescription24Hour == "10 am - 10:59 am" ~ "10",
-        TimeBandDescription24Hour == "11 am - 11:59 am" ~ "11",
-        TimeBandDescription24Hour == "12 pm - 12:59 pm" ~ "12",
-        TimeBandDescription24Hour == "1 pm - 1:59 pm" ~ "13",
-        TimeBandDescription24Hour == "2 pm - 2:59 pm" ~ "14",
-        TimeBandDescription24Hour == "3 pm - 3:59 pm" ~ "15",
-        TimeBandDescription24Hour == "4 pm - 4:59 pm" ~ "16",
-        TimeBandDescription24Hour == "5 pm - 5:59 pm" ~ "17",
-        TimeBandDescription24Hour == "6 pm - 6:59 pm" ~ "18",
-        TimeBandDescription24Hour == "7 pm - 7:59 pm" ~ "19",
-        TimeBandDescription24Hour == "8 pm - 8:59 pm" ~ "20",
-        TimeBandDescription24Hour == "9 pm - 9:59 pm" ~ "21",
-        TimeBandDescription24Hour == "10 pm - 10:59 pm" ~ "22",
-        TimeBandDescription24Hour == "11 pm - 11:59 pm" ~ "23"
+        TimeDescription == "12 am - 12:59 am" ~ "00",
+        TimeDescription == "1 am - 1:59 am" ~ "01",
+        TimeDescription == "2 am - 2:59 am" ~ "02",
+        TimeDescription == "3 am - 3:59 am" ~ "03",
+        TimeDescription == "4 am - 4:59 am" ~ "04",
+        TimeDescription == "5 am - 5:59 am" ~ "05",
+        TimeDescription == "6 am - 6:59 am" ~ "06",
+        TimeDescription == "7 am - 7:59 am" ~ "07",
+        TimeDescription == "8 am - 8:59 am" ~ "08",
+        TimeDescription == "9 am - 9:59 am" ~ "09",
+        TimeDescription == "10 am - 10:59 am" ~ "10",
+        TimeDescription == "11 am - 11:59 am" ~ "11",
+        TimeDescription == "12 pm - 12:59 pm" ~ "12",
+        TimeDescription == "1 pm - 1:59 pm" ~ "13",
+        TimeDescription == "2 pm - 2:59 pm" ~ "14",
+        TimeDescription == "3 pm - 3:59 pm" ~ "15",
+        TimeDescription == "4 pm - 4:59 pm" ~ "16",
+        TimeDescription == "5 pm - 5:59 pm" ~ "17",
+        TimeDescription == "6 pm - 6:59 pm" ~ "18",
+        TimeDescription == "7 pm - 7:59 pm" ~ "19",
+        TimeDescription == "8 pm - 8:59 pm" ~ "20",
+        TimeDescription == "9 pm - 9:59 pm" ~ "21",
+        TimeDescription == "10 pm - 10:59 pm" ~ "22",
+        TimeDescription == "11 pm - 11:59 pm" ~ "23"
       )
     )
 }
 
 
 ## Edit day of week indicator
-fix_time_band_24hr <- function(my_data) {
+fix_day_of_week <- function(my_data) {
   # Load required dependencies
   if (!require("pacman"))
     install.packages("pacman")
@@ -82,13 +83,13 @@ fix_time_band_24hr <- function(my_data) {
   df <- my_data %>%
     mutate(
       DayNameOfWeek = case_when(
-        DayOfWeek == 1 ~ "1-Sunday",
-        DayOfWeek == 2 ~ "2-Monday",
-        DayOfWeek == 3 ~ "3-Tuesday",
-        DayOfWeek == 4 ~ "4-Wednesday",
-        DayOfWeek == 5 ~ "5-Thursday",
-        DayOfWeek == 6 ~ "6-Friday",
-        DayOfWeek == 7 ~ "7-Saturday"
+        DayNameOfWeek == "Sunday" ~ "1-Sunday",
+        DayNameOfWeek == "Monday" ~ "2-Monday",
+        DayNameOfWeek == "Tuesday" ~ "3-Tuesday",
+        DayNameOfWeek == "Wednesday" ~ "4-Wednesday",
+        DayNameOfWeek == "Thursday" ~ "5-Thursday",
+        DayNameOfWeek == "Friday" ~ "6-Friday",
+        DayNameOfWeek == "Saturday" ~ "7-Saturday"
       )
     )
 }
@@ -100,36 +101,22 @@ anonymize_students <- function(my_data) {
   tryCatch({
     df$StudentID_Anonymous <- df %>%  group_indices(StudentName)
     df <- df %>% select(-StudentID)
-  }, error = function(e){
+  }, error = function(e) {
     df <- df
   })
   
   tryCatch({
     df$StudentID_Anon <- df %>%  group_indices(UserID)
     df <- df %>% select(-UserID)
-  }, error = function(e){
+  }, error = function(e) {
     df <- df
   })
   
   tryCatch({
     df <- df %>% select(-OriginalPostAuthor)
-  }, error = function(e){
+  }, error = function(e) {
     df <- df
   })
   
   return(df)
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
