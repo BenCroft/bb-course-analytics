@@ -1,7 +1,7 @@
 # Wrangling functions
 
 ## Edit week level indicator
-fix_week_level <- function(dataset) {
+fix_week_level <- function(my_data) {
   # Load required dependencies
   if (!require("pacman"))
     install.packages("pacman")
@@ -34,13 +34,13 @@ fix_week_level <- function(dataset) {
 
 
 ## Edit 24 hour time band indicator
-fix_time_band_24hr <- function(dataset) {
+fix_time_band_24hr <- function(my_data) {
   # Load required dependencies
   if (!require("pacman"))
     install.packages("pacman")
   pacman::p_load(dplyr)
   
-  df <- dataset %>%
+  df <- my_data %>%
     mutate(
       TimeDescription = case_when(
         TimeBandDescription24Hour == "12 am - 12:59 am" ~ "00",
@@ -73,13 +73,13 @@ fix_time_band_24hr <- function(dataset) {
 
 
 ## Edit day of week indicator
-fix_time_band_24hr <- function(dataset) {
+fix_time_band_24hr <- function(my_data) {
   # Load required dependencies
   if (!require("pacman"))
     install.packages("pacman")
   pacman::p_load(dplyr)
   
-  df <- dataset %>%
+  df <- my_data %>%
     mutate(
       DayNameOfWeek = case_when(
         DayOfWeek == 1 ~ "1-Sunday",
@@ -94,11 +94,11 @@ fix_time_band_24hr <- function(dataset) {
 }
 
 ## Anonymize
-anonymize_students <- function(dataset) {
-  df <- dataset
+anonymize_students <- function(my_data) {
+  df <- my_data
   
   tryCatch({
-    df$StudentID_Anon <- df %>%  group_indices(StudentID)
+    df$StudentID_Anonymous <- df %>%  group_indices(StudentName)
     df <- df %>% select(-StudentID)
   }, error = function(e){
     df <- df
