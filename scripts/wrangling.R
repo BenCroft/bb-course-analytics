@@ -94,29 +94,4 @@ fix_day_of_week <- function(my_data) {
     )
 }
 
-## Anonymize
-anonymize_students <- function(my_data) {
-  df <- my_data
-  
-  tryCatch({
-    df$StudentID_Anonymous <- df %>%  group_indices(StudentName)
-    df <- df %>% select(-StudentID)
-  }, error = function(e) {
-    df <- df
-  })
-  
-  tryCatch({
-    df$StudentID_Anon <- df %>%  group_indices(UserID)
-    df <- df %>% select(-UserID)
-  }, error = function(e) {
-    df <- df
-  })
-  
-  tryCatch({
-    df <- df %>% select(-OriginalPostAuthor)
-  }, error = function(e) {
-    df <- df
-  })
-  
-  return(df)
-}
+

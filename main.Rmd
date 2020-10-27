@@ -7,18 +7,27 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Load libraries
+## Set new parameters for reproducible pipeline
 
 ```{r}
+course <- 'BIOL_228_4001'
+```
+
+
+## Load libraries
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 library(dplyr)
 library(ggplot2)
 library(lubridate)
+library(scales)
 ```
 
 ## Load helper scripts (functions)
 
 ```{r}
 source("./scripts/wrangling.R")
+source("./scripts/visualizer.R")
 ```
 
 ## Load data
@@ -26,7 +35,6 @@ source("./scripts/wrangling.R")
 ### Set course path
 
 ```{r}
-course <- 'BIOL_228_4001'
 course_directory <- paste0("/Volumes/Departments/Extended\ Studies/DEHistData/Analytics_BC/", course, '/input/')
 ```
 
@@ -53,20 +61,73 @@ submissions <- read.csv(submissions_path)
 ## Process data
 
 ```{r}
-length(unique(dynamics$StudentName))
-length(unique(grades$StudentName))
-length(unique(items$StudentName))
-length(unique(statics$StudentName))
+## Ensure equal lengths among datasets
+# length(unique(dynamics$StudentName))
+# length(unique(grades$StudentName))
+# length(unique(items$StudentName))
+# length(unique(statics$StudentName))
 # length(unique(dynamics$StudentName))
 ```
 
 ### Fix time formatting in `dynamics`
 
-```{r}
-dynamics_cleaned <- fix_time_band_24hr(dynamics)
-dynamics_cleaned <- fix_week_level(dynamics_cleaned)
-dynamics_cleaned <- fix_day_of_week(dynamics_cleaned)
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+dynamics <- fix_time_band_24hr(dynamics)
+dynamics <- fix_week_level(dynamics_cleaned)
+dynamics <- fix_day_of_week(dynamics_cleaned)
 ```
+
+### Anonymize student identifiers
+
+```{r}
+student_roster <- union(dynamics_cleaned$StudentName, grades$StudentName)
+student_roster <- union(student_roster, items$StudentName)
+student_roster <- union(student_roster, statics$StudentName)
+
+student_count <- length(unique(student_roster))
+student_anon_ids <- sample(10000:99999, student_count, replace=FALSE)
+student_anon_df <- data.frame(student_roster, student_anon_ids) %>%
+  rename(StudentName = student_roster, StudentID_Anon = student_anon_ids)
+
+dynamics <- left_join(dynamics, student_anon_df, by = c("StudentName"))
+grades <- left_join(grades, student_anon_df, by = c("StudentName"))
+items <- left_join(items, student_anon_df, by = c("StudentName"))
+statics <- left_join(statics, student_anon_df, by = c("StudentName"))
+```
+
+## Visualization
+
+### Outcomes
+
+#### Final Grade Distribution
+
+```{r}
+viz <- viz_FinalGradeDistribution(statics)
+viz
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
