@@ -22,6 +22,7 @@ library(ggplot2)
 library(lubridate)
 library(scales)
 library(stringr)
+library(ggrepel)
 ```
 
 ## Load helper scripts (functions)
@@ -93,13 +94,23 @@ sis_path <- paste0(course_directory, "sis.csv")
 ### Read data into memory
 
 ```{r}
-dynamics <- read.csv(dynamics_path)
-grades <- read.csv(grades_path)
-items <- read.csv(items_path)
-statics <- read.csv(statics_path)
-submissions <- read.csv(submissions_path)
-sis <- read.csv(sis_path)
+dynamics_input    <- read.csv(dynamics_path)
+grades_input      <- read.csv(grades_path)
+items_input       <- read.csv(items_path)
+statics_input     <- read.csv(statics_path)
+submissions_input <- read.csv(submissions_path)
+sis_input         <- read.csv(sis_path)
 ```
+
+```{r}
+dynamics <- dynamics_input
+grades <- grades_input
+items <- items_input
+statics <- statics_input
+submissions <- submissions_input
+sis <- sis_input
+```
+
 
 ## Process data
 
@@ -176,20 +187,49 @@ sis <- sis %>%
   select(-StudentName, -StudentID, -EmployeeID)
 ```
 
+### Remove duplicates
+
+```{r}
+# Find duplicates in students - largely due to multiple AcademicPlan values per student
+# sis %>%
+#   select(-AcademicSubPlan, -AcademicPlan) %>%
+#   distinct() %>%
+#   group_by(StudentID_Anon) %>%
+#   summarise(count = n()) %>%
+#   arrange(desc(count)) 
+
+sis_no_acad_plan <- sis %>%
+  select(-AcademicPlan, -AcademicSubPlan) %>%
+  distinct()
+```
+
+```{r}
+statics %>%
+  #select(-AcademicSubPlan, -AcademicPlan) %>%
+  # distinct() %>%
+  group_by(StudentID_Anon) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+
+```
+
+
+
+
 ## Visualization
 
 ### Outcomes
 
 #### Final Grade Distribution
 
-```{r}
+```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
 viz <- viz_FinalGradeDistribution(statics)
 viz
 ```
 
-```{r, fig.retina = 2, fig.width = 8.5, fig.height = 8}
+```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
 statics %>%
-  left_join(sis, by = "StudentID_Anon") %>%
+  left_join(sis_no_acad_plan, by = "StudentID_Anon") %>%
   filter(!SISGradeLetter %in% c('W', 'CW', 'I')) %>%
   ggplot(aes(y = NormalizedScore, x = FullTimePartTimeDescription)) +
   geom_boxplot(aes(fill = FullTimePartTimeDescription)) +
@@ -202,63 +242,77 @@ statics %>%
        subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
        caption = "Note: This dataset excludes students who withdrew or had an incomplete term") +
   scale_fill_manual(values = c("#009DD9", "#999999")) +
-  theme(legend.position = "")
+  theme(legend.position = "") +
+  scale_y_continuous(limits = c(0, 100)) 
+```
 
-  
+```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
+statics %>%
+  left_join(sis_no_acad_plan, by = "StudentID_Anon") %>%
+  filter(!SISGradeLetter %in% c('W', 'CW', 'I')) %>%
+  ggplot(aes(y = NormalizedScore, x = Gender)) +
+  geom_boxplot(aes(fill = Gender)) +
+  geom_jitter(width = 0.10) +
+  my_theme() +
+  labs(title = "Course Outcomes by Gender", 
+       y = "Course Grade (Percent)", 
+       x = "", 
+       color = "Credit Load",
+       subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
+       caption = "Note: This dataset excludes students who withdrew or had an incomplete term") +
+  scale_fill_manual(values = c("#009DD9", "#999999")) +
+  theme(legend.position = "") +
+  scale_y_continuous(limits = c(0, 100)) 
 ```
 
 ```{r}
-# Join statics with demographics
+statics %>%
+  filter(Gender =)
+```
 
-
-ggplot()
+```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
+statics %>%
+  left_join(sis_no_acad_plan, by = "StudentID_Anon") %>%
+  filter(!SISGradeLetter %in% c('W', 'CW', 'I')) %>%
+  ggplot(aes(y = NormalizedScore, x = as.factor(FirstTermAtInstution))) +
+  geom_boxplot(aes(fill = as.factor(FirstTermAtInstution))) +
+  geom_jitter(width = 0.10) +
+  my_theme() +
+  labs(title = "Course Outcomes by First Time Status", 
+       y = "Course Grade (Percent)", 
+       x = "", 
+       color = "Credit Load",
+       subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
+       caption = "Note: This dataset excludes students who withdrew or had an incomplete term") +
+  scale_fill_manual(values = c("#009DD9", "#999999")) +
+  theme(legend.position = "") +
+  scale_y_continuous(limits = c(0, 100)) 
 ```
 
 
+```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
+tmp <- statics %>%
+  left_join(sis_no_acad_plan, by = "StudentID_Anon") %>%
+  filter(!SISGradeLetter %in% c('W', 'CW', 'I')) %>%
+  mutate(Description = factor(Description, levels=c("Freshman", "Sophomore", "Junior", "Senior", "Post-Bacc Undergraduate")))
 
-
-```{r}
-  # Step 1: Prep the data
-  statics_viz_df1 <- statics %>%
-    select(SISGradeLetter) %>%
-    mutate(SISGradeLetter = factor(SISGradeLetter,levels = c("A+", "A", "A-", 
-                                                             "B+", "B", "B-", 
-                                                             "C+", "C", "C-", 
-                                                             "D+", "D", "D-", 
-                                                             "F", "CW", "W")))
+ggplot(tmp, aes(y = NormalizedScore, x = as.factor(Description))) +
+  geom_boxplot(aes(fill = as.factor(Description)), outlier.shape = NA) +
+  geom_jitter(width = 0.10) +
+  my_theme() +
+  labs(title = "Course Outcomes by First Generation Status", 
+       y = "Course Grade (Percent)", 
+       x = "", 
+       color = "Credit Load",
+       subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
+       caption = "Note: This dataset excludes students who withdrew or had an incomplete term") +
+  scale_fill_manual(values = c("#009DD9", "#999999", "#999999", "#999999", "#999999")) +
+  theme(legend.position = "") +
+  scale_x_discrete(labels = abbreviate) +
+  scale_y_continuous(limits = c(0, 100)) #+
+  #geom_text_repel(aes(y = NormalizedScore, x = as.factor(Description), label = round(NormalizedScore,0)))
   
-  statis_viz_df2 <- data.frame(table(statics_viz_df1)) %>%
-    rename(SISGradeLetter = statics_viz_df1) %>%
-    mutate(Count = Freq) %>% 
-    mutate(Outcome = case_when(SISGradeLetter %in% c("A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-") ~ "Above C-",
-                               SISGradeLetter %in% c("D+", "D", "D-", "F") ~ "DF",
-                               SISGradeLetter %in% c("CW", "W", "I") ~ "Withdrew/Incomplete")) %>%
-    mutate(RowNumber = row_number()) %>%
-    select(RowNumber, SISGradeLetter, Freq, Outcome)
-  
-  # #####################################
-  # Step 2: Build the visualization
-  g <- ggplot(statis_viz_df2, aes(x = SISGradeLetter, y = Freq)) + 
-    geom_bar(stat = "identity", aes(fill = Outcome), alpha = 0.8) +
-    #   # Add the theme layers
-    my_theme() +
-    
-    scale_y_continuous(breaks = pretty_breaks()) +
-    scale_fill_manual(name = "Outcome", 
-                      labels = c("Above C-", "Below C-", "Withdrew"), 
-                      values = c("#009DD9", "#192841", "#999999")) +
-    
-    # Add labels
-    labs(title = "Final Grade Distribution",
-         subtitle = "Number of students receiving each grade letter",
-         caption = paste0("eCampus Center"),
-         x = "Grade Letter",
-         y = "Number of Students")
-  g
 ```
-
-
-
 
 
 
