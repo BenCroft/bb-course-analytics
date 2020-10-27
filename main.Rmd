@@ -114,10 +114,21 @@ grades <- grades_input
 items <- items_input
 statics <- statics_input
 submissions <- submissions_input
-sis <- sis_input
+sis_acad_plan <- sis_input
+sis_no_acad_plan <- sis_input
 ```
 
 ## Process data
+
+### Add space in BISQL student names
+
+```{r}
+sis_acad_plan %>%
+  mutate(StudentName = addSpace(StudentName))
+sis_no_acad_plan %>%
+  mutate(StudentName = addSpace(StudentName))
+```
+
 
 ```{r}
 ## Ensure equal lengths among datasets
@@ -125,6 +136,7 @@ sis <- sis_input
 # length(unique(grades$StudentName))
 # length(unique(items$StudentName))
 # length(unique(statics$StudentName))
+# length(unique(dynamics$StudentName))
 # length(unique(dynamics$StudentName))
 ```
 
@@ -136,10 +148,12 @@ dynamics <- fix_week_level(dynamics)
 dynamics <- fix_day_of_week(dynamics)
 ```
 
-### Fix data type in `sis`
+### Fix data type in `sis_acad_plan` and `sis_no_acad_plan`
 
 ```{r}
-sis <- sis %>%
+sis_acad_plan <- sis_acad_plan %>%
+  mutate(StudentID = as.character(StudentID))
+sis_no_acad_plan <- sis_no_acad_plan %>%
   mutate(StudentID = as.character(StudentID))
 ```
 
@@ -308,12 +322,7 @@ ggplot(tmp, aes(y = NormalizedScore, x = as.factor(Description))) +
   
 ```
 
-```{r}
-sis %>%
-  group_by(as.factor(HasTransferCumGPA)) %>%
-  summarise(count = n()) %>%
-  arrange(desc(count))
-```
+
 
 
 ```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
