@@ -21,6 +21,7 @@ library(dplyr)
 library(ggplot2)
 library(lubridate)
 library(scales)
+library(stringr)
 ```
 
 ## Load helper scripts (functions)
@@ -46,6 +47,7 @@ grades_path <-paste0(course_directory, "grades.csv")
 items_path <- paste0(course_directory, "items.csv")
 statics_path <- paste0(course_directory, "statics.csv")
 submissions_path <- paste0(course_directory, "submissions.csv")
+sis_path <- paste0(course_directory, "sis.csv")
 ```
 
 ### Read data into memory
@@ -56,6 +58,7 @@ grades <- read.csv(grades_path)
 items <- read.csv(items_path)
 statics <- read.csv(statics_path)
 submissions <- read.csv(submissions_path)
+sis <- read.csv(sis_path)
 ```
 
 ## Process data
@@ -73,27 +76,72 @@ submissions <- read.csv(submissions_path)
 
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 dynamics <- fix_time_band_24hr(dynamics)
-dynamics <- fix_week_level(dynamics_cleaned)
-dynamics <- fix_day_of_week(dynamics_cleaned)
+dynamics <- fix_week_level(dynamics)
+dynamics <- fix_day_of_week(dynamics)
 ```
+
+### Fix data type in `sis`
+
+```{r}
+sis <- sis %>%
+  mutate(StudentID = as.character(StudentID))
+```
+
 
 ### Anonymize student identifiers
 
+#### Create StudentID column
+
 ```{r}
-student_roster <- union(dynamics_cleaned$StudentName, grades$StudentName)
-student_roster <- union(student_roster, items$StudentName)
-student_roster <- union(student_roster, statics$StudentName)
+dynamics <- create_student_id_col(dynamics)
+grades <- create_student_id_col(grades)
+items <- create_student_id_col(items)
+statics <- create_student_id_col(statics)
+```
+
+#### Create anonymous/random ids
+
+```{r}
+set.seed(1)
+
+student_roster <- union(dynamics$StudentID, grades$StudentID) # Intersect dynamics and grades
+student_roster <- union(student_roster, items$StudentID)      # Intersect items    
+student_roster <- union(student_roster, statics$StudentID)    # Intersect statics
+student_roster <- union(student_roster, sis$StudentID)        # Intersect sis
 
 student_count <- length(unique(student_roster))
 student_anon_ids <- sample(10000:99999, student_count, replace=FALSE)
 student_anon_df <- data.frame(student_roster, student_anon_ids) %>%
-  rename(StudentName = student_roster, StudentID_Anon = student_anon_ids)
+  rename(StudentID = student_roster, StudentID_Anon = student_anon_ids)
 
-dynamics <- left_join(dynamics, student_anon_df, by = c("StudentName"))
-grades <- left_join(grades, student_anon_df, by = c("StudentName"))
-items <- left_join(items, student_anon_df, by = c("StudentName"))
-statics <- left_join(statics, student_anon_df, by = c("StudentName"))
+dynamics <- left_join(dynamics, student_anon_df, by = c("StudentID"))
+grades <- left_join(grades, student_anon_df, by = c("StudentID"))
+items <- left_join(items, student_anon_df, by = c("StudentID"))
+statics <- left_join(statics, student_anon_df, by = c("StudentID"))
+sis <- left_join(sis, student_anon_df, by = c("StudentID"))
 ```
+
+#### Remove PII
+
+```{r}
+dynamics <- dynamics %>%
+  select(-StudentName, -StudentID)
+grades <- grades %>%
+  select(-StudentName, -StudentID)
+items <- items %>%
+  select(-StudentName, -StudentID)
+statics <- statics %>%
+  select(-StudentName, -StudentID)
+```
+
+
+
+
+
+
+
+
+
 
 ## Visualization
 

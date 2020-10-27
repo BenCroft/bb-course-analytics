@@ -95,3 +95,37 @@ fix_day_of_week <- function(my_data) {
 }
 
 
+## Transform a StudentName column to a StudentID
+## e.g. "Doe, Jane (123456789)" -> "123456789"
+create_student_id_col <- function(my_data) {
+  my_data <- my_data %>%
+    mutate(StudentID = word(StudentName, -1)) %>%
+    mutate(StudentID = gsub(StudentID, pattern = "\\(", replacement = "")) %>%
+    mutate(StudentID = gsub(StudentID, pattern = "\\)", replacement = ""))
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
