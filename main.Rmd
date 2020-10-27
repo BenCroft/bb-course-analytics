@@ -22,6 +22,7 @@ library(ggplot2)
 library(lubridate)
 library(scales)
 library(stringr)
+library(ggrepel)
 ```
 
 ## Load helper scripts (functions)
@@ -30,6 +31,46 @@ library(stringr)
 source("./scripts/wrangling.R")
 source("./scripts/visualizer.R")
 ```
+
+## Load viz theme (put in `visualizer.R` later)
+
+```{r}
+my_theme <- function() {
+  background_color <- "transparent" #"transparent"
+  # Other key values
+  theme_bw(base_size = 18, base_family = "Avenir") +#%+replace% 
+    #quartzFonts(ANXTC = c("Avenir Next Condensed Regular", "Avenir Next Condensed Demi Bold", "Avenir Next Condensed Italic", "Avenir Next Condensed Demi Bold Italic"))
+    #theme(text = element_text(family = "ANXTC")) +
+    theme(panel.background = element_rect(fill = background_color, color = NA)) +
+    theme(panel.border = element_rect(color = background_color)) +
+    theme(panel.grid.major = element_blank()) +
+    theme(panel.grid.minor = element_blank()) +
+    theme(panel.grid.major.y = element_line(colour = "#dddddd", linetype = "dotted", size = 1)) + 
+    #theme(panel.grid.major.x=element_blank()) +    
+    #theme(panel.grid.minor.y = element_line(colour = "#B6B6B9", linetype = "dotted")) + 
+    #theme(panel.grid.minor.x =element_blank()) +    
+    theme(plot.background = element_rect(fill = background_color, color = NA)) +
+    theme(plot.title = element_text(color = "gray30", face = "bold", size = 20, vjust = 1.00)) +
+    theme(plot.subtitle = element_text(color = "#707276",  face = "plain", size = 16)) +   
+    theme(plot.caption = element_text(color = "#707276", size = 12, face = "plain")) +
+    #theme(strip.background = element_rect(fill="white")) +
+    theme(axis.ticks = element_blank()) +
+    theme(axis.line = element_line(color = "grey30", size = 0.5, linetype = "solid")) + 
+    theme(axis.text.x = element_text(size = 16, color = "gray30")) +
+    theme(axis.text.y = element_text(size = 16, color = "gray30")) +
+    theme(axis.title.x = element_text(size = 16, color = "gray50", vjust = 0)) +
+    theme(axis.title.y = element_text(size = 16, color = "gray50", vjust = 1.00)) + 
+    theme(legend.position = "top") + #theme(legend.position = "") +
+    theme(legend.background = element_rect(fill = background_color)) +
+    theme(legend.key = element_rect(color = background_color)) +
+    theme(legend.key.width = unit(0.9, "cm")) +
+    theme(legend.key.height = unit(0.9, "cm")) +
+    theme(legend.text = element_text(size = 14, face = "plain", color = "gray50")) +
+    theme(legend.title = element_text(size = 16, face = "bold")) +
+    theme(plot.margin = margin(1, 1, 1, 1, "cm")) 
+}
+```
+
 
 ## Load data
 
@@ -53,13 +94,23 @@ sis_path <- paste0(course_directory, "sis.csv")
 ### Read data into memory
 
 ```{r}
-dynamics <- read.csv(dynamics_path)
-grades <- read.csv(grades_path)
-items <- read.csv(items_path)
-statics <- read.csv(statics_path)
-submissions <- read.csv(submissions_path)
-sis <- read.csv(sis_path)
+dynamics_input    <- read.csv(dynamics_path)
+grades_input      <- read.csv(grades_path)
+items_input       <- read.csv(items_path)
+statics_input     <- read.csv(statics_path)
+submissions_input <- read.csv(submissions_path)
+sis_input         <- read.csv(sis_path)
 ```
+
+```{r}
+dynamics <- dynamics_input
+grades <- grades_input
+items <- items_input
+statics <- statics_input
+submissions <- submissions_input
+sis <- sis_input
+```
+
 
 ## Process data
 
@@ -132,13 +183,35 @@ items <- items %>%
   select(-StudentName, -StudentID)
 statics <- statics %>%
   select(-StudentName, -StudentID)
+sis <- sis %>%
+  select(-StudentName, -StudentID, -EmployeeID)
 ```
 
+### Remove duplicates
 
+```{r}
+# Find duplicates in students - largely due to multiple AcademicPlan values per student
+# sis %>%
+#   select(-AcademicSubPlan, -AcademicPlan) %>%
+#   distinct() %>%
+#   group_by(StudentID_Anon) %>%
+#   summarise(count = n()) %>%
+#   arrange(desc(count)) 
 
+sis_no_acad_plan <- sis %>%
+  select(-AcademicPlan, -AcademicSubPlan) %>%
+  distinct()
+```
 
+```{r}
+statics %>%
+  #select(-AcademicSubPlan, -AcademicPlan) %>%
+  # distinct() %>%
+  group_by(StudentID_Anon) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
 
-
+```
 
 
 
@@ -149,19 +222,97 @@ statics <- statics %>%
 
 #### Final Grade Distribution
 
-```{r}
+```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
 viz <- viz_FinalGradeDistribution(statics)
 viz
 ```
 
+```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
+statics %>%
+  left_join(sis_no_acad_plan, by = "StudentID_Anon") %>%
+  filter(!SISGradeLetter %in% c('W', 'CW', 'I')) %>%
+  ggplot(aes(y = NormalizedScore, x = FullTimePartTimeDescription)) +
+  geom_boxplot(aes(fill = FullTimePartTimeDescription)) +
+  geom_jitter(width = 0.10) +
+  my_theme() +
+  labs(title = "Course Outcomes by Student Credit Load", 
+       y = "Course Grade (Percent)", 
+       x = "", 
+       color = "Credit Load",
+       subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
+       caption = "Note: This dataset excludes students who withdrew or had an incomplete term") +
+  scale_fill_manual(values = c("#009DD9", "#999999")) +
+  theme(legend.position = "") +
+  scale_y_continuous(limits = c(0, 100)) 
+```
+
+```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
+statics %>%
+  left_join(sis_no_acad_plan, by = "StudentID_Anon") %>%
+  filter(!SISGradeLetter %in% c('W', 'CW', 'I')) %>%
+  ggplot(aes(y = NormalizedScore, x = Gender)) +
+  geom_boxplot(aes(fill = Gender)) +
+  geom_jitter(width = 0.10) +
+  my_theme() +
+  labs(title = "Course Outcomes by Gender", 
+       y = "Course Grade (Percent)", 
+       x = "", 
+       color = "Credit Load",
+       subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
+       caption = "Note: This dataset excludes students who withdrew or had an incomplete term") +
+  scale_fill_manual(values = c("#009DD9", "#999999")) +
+  theme(legend.position = "") +
+  scale_y_continuous(limits = c(0, 100)) 
+```
+
+```{r}
+statics %>%
+  filter(Gender =)
+```
+
+```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
+statics %>%
+  left_join(sis_no_acad_plan, by = "StudentID_Anon") %>%
+  filter(!SISGradeLetter %in% c('W', 'CW', 'I')) %>%
+  ggplot(aes(y = NormalizedScore, x = as.factor(FirstTermAtInstution))) +
+  geom_boxplot(aes(fill = as.factor(FirstTermAtInstution))) +
+  geom_jitter(width = 0.10) +
+  my_theme() +
+  labs(title = "Course Outcomes by First Time Status", 
+       y = "Course Grade (Percent)", 
+       x = "", 
+       color = "Credit Load",
+       subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
+       caption = "Note: This dataset excludes students who withdrew or had an incomplete term") +
+  scale_fill_manual(values = c("#009DD9", "#999999")) +
+  theme(legend.position = "") +
+  scale_y_continuous(limits = c(0, 100)) 
+```
 
 
+```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
+tmp <- statics %>%
+  left_join(sis_no_acad_plan, by = "StudentID_Anon") %>%
+  filter(!SISGradeLetter %in% c('W', 'CW', 'I')) %>%
+  mutate(Description = factor(Description, levels=c("Freshman", "Sophomore", "Junior", "Senior", "Post-Bacc Undergraduate")))
 
-
-
-
-
-
+ggplot(tmp, aes(y = NormalizedScore, x = as.factor(Description))) +
+  geom_boxplot(aes(fill = as.factor(Description)), outlier.shape = NA) +
+  geom_jitter(width = 0.10) +
+  my_theme() +
+  labs(title = "Course Outcomes by First Generation Status", 
+       y = "Course Grade (Percent)", 
+       x = "", 
+       color = "Credit Load",
+       subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
+       caption = "Note: This dataset excludes students who withdrew or had an incomplete term") +
+  scale_fill_manual(values = c("#009DD9", "#999999", "#999999", "#999999", "#999999")) +
+  theme(legend.position = "") +
+  scale_x_discrete(labels = abbreviate) +
+  scale_y_continuous(limits = c(0, 100)) #+
+  #geom_text_repel(aes(y = NormalizedScore, x = as.factor(Description), label = round(NormalizedScore,0)))
+  
+```
 
 
 
