@@ -12,9 +12,19 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Set new parameters for reproducible pipeline
 
 ```{r}
+# REQUIRED PARAMETERS
 course <- 'BIOL_228_4001'
-```
+course_directory <- paste0("/Volumes/Departments/Extended\ Studies/DEHistData/Analytics_BC/", course, '/input/')
 
+# OPTIONAL PARAMETERS:
+
+# Option 1: Combine two course sections
+#course1_directory <- 
+#course2_directory <- 
+#course_combined_directory <- 
+#course1_section_number <- 
+#course2_section_number <- 
+```
 
 ## Load libraries
 
@@ -32,6 +42,7 @@ library(ggrepel)
 ```{r}
 source("./scripts/wrangling.R")
 source("./scripts/visualizer.R")
+source("./scripts/section_combiner.R")
 ```
 
 ## Load viz theme (put in `visualizer.R` later)
@@ -73,14 +84,7 @@ my_theme <- function() {
 }
 ```
 
-
 ## Load data
-
-### Set course path
-
-```{r}
-course_directory <- paste0("/Volumes/Departments/Extended\ Studies/DEHistData/Analytics_BC/", course, '/input/')
-```
 
 ### Set data paths
 
@@ -112,7 +116,6 @@ statics <- statics_input
 submissions <- submissions_input
 sis <- sis_input
 ```
-
 
 ## Process data
 
@@ -204,19 +207,6 @@ sis_no_acad_plan <- sis %>%
   select(-AcademicPlan, -AcademicSubPlan) %>%
   distinct()
 ```
-
-```{r}
-statics %>%
-  #select(-AcademicSubPlan, -AcademicPlan) %>%
-  # distinct() %>%
-  group_by(StudentID_Anon) %>%
-  summarise(count = n()) %>%
-  arrange(desc(count))
-
-```
-
-
-
 
 ## Visualization
 
