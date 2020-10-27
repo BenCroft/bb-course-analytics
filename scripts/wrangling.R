@@ -1,5 +1,9 @@
 # Wrangling functions
 
+## Adding space in BISQL student name fields
+addSpace <- function(x){
+  gsub(pattern = ",", replacement = ", ", x)}
+
 ## Edit week level indicator
 fix_week_level <- function(my_data) {
   # Load required dependencies

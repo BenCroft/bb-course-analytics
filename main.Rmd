@@ -12,9 +12,19 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Set new parameters for reproducible pipeline
 
 ```{r}
+# REQUIRED PARAMETERS
 course <- 'BIOL_228_4001'
-```
+course_directory <- paste0("/Volumes/Departments/Extended\ Studies/DEHistData/Analytics_BC/", course, '/input/')
 
+# OPTIONAL PARAMETERS:
+
+# Option 1: Combine two course sections
+#course1_directory <- 
+#course2_directory <- 
+#course_combined_directory <- 
+#course1_section_number <- 
+#course2_section_number <- 
+```
 
 ## Load libraries
 
@@ -32,6 +42,7 @@ library(ggrepel)
 ```{r}
 source("./scripts/wrangling.R")
 source("./scripts/visualizer.R")
+source("./scripts/section_combiner.R")
 ```
 
 ## Load viz theme (put in `visualizer.R` later)
@@ -73,14 +84,7 @@ my_theme <- function() {
 }
 ```
 
-
 ## Load data
-
-### Set course path
-
-```{r}
-course_directory <- paste0("/Volumes/Departments/Extended\ Studies/DEHistData/Analytics_BC/", course, '/input/')
-```
 
 ### Set data paths
 
@@ -110,19 +114,26 @@ grades <- grades_input
 items <- items_input
 statics <- statics_input
 submissions <- submissions_input
-sis <- sis_input
+sis_acad_plan <- sis_input
+sis_no_acad_plan <- sis_input
 ```
-
 
 ## Process data
 
+### Remove duplicates from `sis_no_acad_plan` due to plan and subplan column removal
+
 ```{r}
-## Ensure equal lengths among datasets
-# length(unique(dynamics$StudentName))
-# length(unique(grades$StudentName))
-# length(unique(items$StudentName))
-# length(unique(statics$StudentName))
-# length(unique(dynamics$StudentName))
+# Find duplicates in students - largely due to multiple AcademicPlan values per student
+# sis %>%
+#   select(-AcademicSubPlan, -AcademicPlan) %>%
+#   distinct() %>%
+#   group_by(StudentID_Anon) %>%
+#   summarise(count = n()) %>%
+#   arrange(desc(count)) 
+
+sis_no_acad_plan <- sis_no_acad_plan %>%
+  select(-AcademicPlan, -AcademicSubPlan) %>%
+  distinct()
 ```
 
 ### Fix time formatting in `dynamics`
@@ -133,13 +144,34 @@ dynamics <- fix_week_level(dynamics)
 dynamics <- fix_day_of_week(dynamics)
 ```
 
-### Fix data type in `sis`
+### Add space in BISQL student names
 
 ```{r}
-sis <- sis %>%
-  mutate(StudentID = as.character(StudentID))
+sis_acad_plan %>%
+  mutate(StudentName = addSpace(StudentName))
+sis_no_acad_plan %>%
+  mutate(StudentName = addSpace(StudentName))
 ```
 
+```{r}
+## Ensure equal lengths among datasets
+# length(unique(dynamics$StudentName))
+# length(unique(grades$StudentName))
+# length(unique(items$StudentName))
+# length(unique(sis_acad_plan$StudentName))
+# length(unique(sis_no_acad_plan$StudentName))
+# length(unique(statics$StudentName))
+# length(unique(submissions$StudentName))
+```
+
+### Fix data type in `sis_acad_plan` and `sis_no_acad_plan`
+
+```{r}
+sis_acad_plan <- sis_acad_plan %>%
+  mutate(StudentID = as.character(StudentID))
+sis_no_acad_plan <- sis_no_acad_plan %>%
+  mutate(StudentID = as.character(StudentID))
+```
 
 ### Anonymize student identifiers
 
@@ -157,11 +189,14 @@ statics <- create_student_id_col(statics)
 ```{r}
 set.seed(1)
 
-student_roster <- union(dynamics$StudentID, grades$StudentID) # Intersect dynamics and grades
-student_roster <- union(student_roster, items$StudentID)      # Intersect items    
-student_roster <- union(student_roster, statics$StudentID)    # Intersect statics
-student_roster <- union(student_roster, sis$StudentID)        # Intersect sis
+student_roster <- union(dynamics$StudentID, grades$StudentID)       # Intersect dynamics and grades
+student_roster <- union(student_roster, items$StudentID)            # Intersect items    
+student_roster <- union(student_roster, statics$StudentID)          # Intersect statics
+student_roster <- union(student_roster, sis_acad_plan$StudentID)    # Intersect sis_acad_plan
+student_roster <- union(student_roster, sis_no_acad_plan$StudentID) # Intersect sis_no_acad_plan
 
+
+# Create hash table for anonymous student ids
 student_count <- length(unique(student_roster))
 student_anon_ids <- sample(10000:99999, student_count, replace=FALSE)
 student_anon_df <- data.frame(student_roster, student_anon_ids) %>%
@@ -171,7 +206,8 @@ dynamics <- left_join(dynamics, student_anon_df, by = c("StudentID"))
 grades <- left_join(grades, student_anon_df, by = c("StudentID"))
 items <- left_join(items, student_anon_df, by = c("StudentID"))
 statics <- left_join(statics, student_anon_df, by = c("StudentID"))
-sis <- left_join(sis, student_anon_df, by = c("StudentID"))
+sis_acad_plan <- left_join(sis_acad_plan, student_anon_df, by = c("StudentID"))
+sis_no_acad_plan <- left_join(sis_no_acad_plan, student_anon_df, by = c("StudentID"))
 ```
 
 #### Remove PII
@@ -185,38 +221,11 @@ items <- items %>%
   select(-StudentName, -StudentID)
 statics <- statics %>%
   select(-StudentName, -StudentID)
-sis <- sis %>%
+sis_acad_plan <- sis_acad_plan %>%
+  select(-StudentName, -StudentID, -EmployeeID)
+sis_no_acad_plan <- sis_no_acad_plan %>%
   select(-StudentName, -StudentID, -EmployeeID)
 ```
-
-### Remove duplicates
-
-```{r}
-# Find duplicates in students - largely due to multiple AcademicPlan values per student
-# sis %>%
-#   select(-AcademicSubPlan, -AcademicPlan) %>%
-#   distinct() %>%
-#   group_by(StudentID_Anon) %>%
-#   summarise(count = n()) %>%
-#   arrange(desc(count)) 
-
-sis_no_acad_plan <- sis %>%
-  select(-AcademicPlan, -AcademicSubPlan) %>%
-  distinct()
-```
-
-```{r}
-statics %>%
-  #select(-AcademicSubPlan, -AcademicPlan) %>%
-  # distinct() %>%
-  group_by(StudentID_Anon) %>%
-  summarise(count = n()) %>%
-  arrange(desc(count))
-
-```
-
-
-
 
 ## Visualization
 
@@ -318,12 +327,7 @@ ggplot(tmp, aes(y = NormalizedScore, x = as.factor(Description))) +
   
 ```
 
-```{r}
-sis %>%
-  group_by(as.factor(HasTransferCumGPA)) %>%
-  summarise(count = n()) %>%
-  arrange(desc(count))
-```
+
 
 
 ```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
