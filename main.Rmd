@@ -32,6 +32,7 @@ course_directory <- paste0("/Users/bencroft/", course, '/input/')
 library(dplyr)
 library(ggplot2)
 library(lubridate)
+library(data.table)
 library(scales)
 library(stringr)
 library(ggrepel)
@@ -344,7 +345,7 @@ prerequisites_path <- paste0(course_directory, "prerequisites.csv")
 #### Read data into memory
 
 ```{r}
-prerequisites_input    <- read.csv(prerequisites_path)
+prerequisites_input <- read.csv(prerequisites_path)
 ```
 
 ```{r}
@@ -355,8 +356,8 @@ prerequisites <- prerequisites_input
 colnames(prerequisites) <- c("TermKey", "TermSourceKey", "SessionCode", "ClassNumberSectionUniqueDescription", "ClassNumberUniqueDescription",
                              "PrimarySubject", "PrimaryCatalogNumber", "ClassSection", "PrimaryComponent", "CourseAttribute", "CourseAttributeValue",
                              "ValueFormalDescription", "StudentID", "EnrolledClassCount", "DropCount", "WithdrawCount", "CreditsAttempted",
-                             "CreditsEarned", "EarnCreditIndicator", "SuccessInidicator", "HassClassGrade", "ClassGrade", "GradeKey",
-                             "GradeLetter", "GradeDescription", "GradeSubgroup", "GradeGroup", "GradingBasisDescription")
+                             "CreditsEarned", "EarnCreditIndicator", "SuccessInidicator", "HasClassGrade", "ClassGrade", "GradeKey",
+                             "GradeLetter", "GradePoints", "GradeDescription", "GradeSubgroup", "GradeGroup", "GradingBasisDescription")
 ```
 
 ```{r}
@@ -364,17 +365,44 @@ head(prerequisites)
 ```
 
 ```{r}
-# Need to get grade percent
-
+table(prerequisites$ValueFormalDescription)
 
 ```
 
 
 
+```{r}
+# Clean data
+p1 <- prerequisites %>%
+  filter(EnrolledClassCount == 1,
+         DropCount == 0,
+         WithdrawCount == 0) %>%
+  filter(HasClassGrade == 1) %>%
+  select(StudentID, TermSourceKey, PrimarySubject, PrimaryCatalogNumber, ClassSection, GradeLetter, GradePoints, GradeDescription, GradeSubgroup, GradeGroup,
+         GradingBasisDescription, ValueFormalDescription)
 
 
+# Cast data
+p2 <- reshape2::dcast(p1, 
+                      StudentID + TermSourceKey + PrimarySubject + PrimaryCatalogNumber + ClassSection + GradeLetter + GradePoints + 
+                        GradeDescription + GradeSubgroup + GradeGroup + GradingBasisDescription ~ ValueFormalDescription, 
+                      value.var = "ValueFormalDescription")
 
+# Fix spaces in column names
+names(p2) <- str_replace_all(names(p2), c(" " = ".",
+                                          "," = ""))
 
+to_one <- function(x) {
+  ifelse(x >= 1, 1, 0)
+}
+
+p3 <- p2 %>%
+  mutate_at(.vars = vars(Afterwork.Program, Area.III.Core.course, Distance.Learning.Course, Dual.Enrollment, Exclude.from.Bronco.Budget,
+                         Foundations.of.Natural.Physical.and.Applied.Sci, GEM.Common.Course.Number, Imaging.Sciences.BS.OPF.O, Military.Programs,
+                         Mountain.Home.Program, Natural.Physical.and.Applied.Sciences, Online.Degree.Pathway.Lower.Div.Classes.OPF.O, Scientific.Ways.of.Knowing,
+                         Weekend.University),
+            .funs = to_one)
+```
 
 
 
