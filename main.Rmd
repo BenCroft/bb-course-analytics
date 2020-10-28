@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 # REQUIRED PARAMETERS
-course <- 'BIOL_228_4001'
+course <- 'BIOL_228_4001_4002'
 course_directory <- paste0("/Volumes/Departments/Extended\ Studies/DEHistData/Analytics_BC/", course, '/input/')
 
 # OPTIONAL PARAMETERS:
@@ -273,6 +273,31 @@ v <- viz_OutcomesByFirstGeneration(statics, sis_no_acad_plan)
 ```{r, fig.height = 11, fig.width = 8}
 v <- viz_CourseItemGradeDistributions(grades)
 v
+```
+
+## Bb Activities by Group
+
+```{r}
+statics %>%
+  group_by(SISGradeLetter) %>%
+  summarise(StudentCount = n(),
+            Minutes_Mean = round(mean(CourseAccessMinutes),1),
+            Hours_Mean = round(mean(CourseAccessMinutes/60),1),
+            Minutes_Median = round(median(CourseAccessMinutes),1),
+            Hours_Median = round(median(CourseAccessMinutes/60),1),
+            Logins_Mean = round(mean(CourseAccesses),1),
+            Logins_Median = round(median(CourseAccesses),1),
+            Db_Posts_Mean = round(mean(ForumPosts),1),
+            Db_Posts_Median =round(median(ForumPosts),1),
+            Db_Chars_Mean = round(mean(ForumPostCharacters),1),
+            Db_Chars_Median = round(median(ForumPostCharacters),1)) %>%
+  mutate(SISGradeLetter = factor(SISGradeLetter,levels = c("A+", "A", "A-", 
+                                                             "B+", "B", "B-", 
+                                                             "C+", "C", "C-", 
+                                                             "D+", "D", "D-", 
+                                                             "F", "CW", "W"))) %>%
+  arrange(SISGradeLetter)
+  
 ```
 
 
