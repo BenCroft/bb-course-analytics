@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 # REQUIRED PARAMETERS
-course <- 'BIOL_228_4001'
+course <- 'BIOL_228_4001_4002'
 course_directory <- paste0("/Volumes/Departments/Extended\ Studies/DEHistData/Analytics_BC/", course, '/input/')
 
 # OPTIONAL PARAMETERS:
@@ -275,7 +275,59 @@ v <- viz_CourseItemGradeDistributions(grades)
 v
 ```
 
+## Bb Activity by Group
 
+### Bb Activity by SISGradeLetter
+
+#### Table: All
+
+```{r}
+t <- table_ActivityBySISGradeLetter(statics)
+```
+
+#### Boxplot: Hours
+
+```{r, fig.width = 8, fig.height = 7}
+v <- viz_Activity_HoursBySISGradeLetter(statics)
+```
+
+#### Boxplot: Logins
+
+```{r}
+v <- viz_Activity_LoginsBySISGradeLetter(statics)
+```
+
+#### Boxplot: Post Characters
+
+```{r}
+v <- viz_Activity_CharactersBySISGradeLetter(statics)
+```
+
+### Bb Activity by FirstGen
+
+#### Table: All
+
+```{r}
+t <- table_ActivityByFirstGen(statics, sis_no_acad_plan)
+```
+
+#### Boxplot: Hours
+
+```{r}
+v <- viz_Activity_HoursByFirstGen(statics, sis_no_acad_plan)
+```
+
+#### Boxplot: Logins
+
+```{r}
+v <- viz_Activity_LoginsByFirstGen(statics, sis_no_acad_plan)
+```
+
+#### Boxplot: Post Characters
+
+```{r}
+v <- viz_Activity_CharactersByFirstGen(statics, sis_no_acad_plan)
+```
 
 
 
