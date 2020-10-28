@@ -37,6 +37,7 @@ library(scales)
 library(stringr)
 library(ggrepel)
 library(ggridges)
+library(ggpmisc)
 ```
 
 ## Load helper scripts (functions)
@@ -481,29 +482,25 @@ prereq_biol227 <- p5 %>%
 statics_w_bio227 <- left_join(statics, prereq_biol227, by = "StudentID_Anon")
 ```
 
-```{r, fig.width = 8, fig.height = 7}
-tmp_cor <- cor(statics_w_bio227$NormalizedScore, statics_w_bio227$GradePoints, use = "complete.obs")
-tmp_cor
+```{r, fig.width = 9, fig.height = 7}
 
-lm_eqn <- function(df){
-    m <- lm(NormalizedScore ~ GradePoints, df);
-    eq <- substitute(italic(NormalizedScore) == a + b %.% italic(GradePoints)*","~~italic(r)^2~"="~r2, 
-         list(a = format(unname(coef(m)[1]), digits = 2),
-              b = format(unname(coef(m)[2]), digits = 2),
-             r2 = format(summary(m)$r.squared, digits = 3)))
-    as.character(as.expression(eq));
-}
+formula <- y ~ x
+
 
 ggplot(statics_w_bio227, aes(y = NormalizedScore, x = GradePoints)) +
   geom_point(alpha = 0.75) +
   my_theme() +
-  labs(title = "SU20 BIOL 228 Performance by BIOL 227 Outcome", 
-       subtitle = lm_eqn(statics_w_bio227),
+  labs(title = "Relationship between Course and Prereq Performance", 
+       subtitle = "Course: SU20 BIOL 228 \nPrereq: BIOL 227",
        x = "Grade Points in BIOL 227",
        y = "Grade in BIOL 228",
        caption = "Note: Excludes students without BIOL 227 GPA records \n Excludes P/F Grades, excludes AUD/W/CW/I") +
   geom_smooth(method = "lm") +
-  geom_text(size = 4, x = 200, y = 200, label = lm_eqn(statics_w_bio227), parse = TRUE)
+  stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+               label.x.npc = "right", label.y.npc = 0.30,
+               formula = formula, parse = TRUE, size = 5,
+               color = "blue")
+
 ```
 
 
