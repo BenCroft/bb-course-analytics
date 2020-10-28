@@ -352,6 +352,8 @@ prerequisites_input <- read.csv(prerequisites_path)
 prerequisites <- prerequisites_input
 ```
 
+### Process data
+
 #### Fix column names
 
 ```{r}
@@ -424,33 +426,85 @@ p3 %>%
 ```
 
 
+### Anonymize data
+
+#### Pull hash table for anonymous ids
+
+```{r}
+# Convert prereq StudentID to a factor to be able to join
+p4 <- p3 %>%
+  mutate(StudentID = as.factor(StudentID))
+
+p4 <- right_join(p4, student_anon_df, by = c("StudentID"))
+```
+
+### Remove PII
+
+```{r}
+p5 <- p4 %>%
+  select(-StudentID)
+```
 
 
+```{r}
+p5
+```
 
 
+### Prereq 1: BIOL 227
 
+#### Choose only highest prereq grade and ensure no duplicates
 
+```{r}
+prereq_biol227_check <- p5 %>%
+  filter(PrimarySubject == "BIOL" & PrimaryCatalogNumber == "227") %>%
+  filter(!GradeSubgroup == "P") %>%
+  group_by(StudentID_Anon) %>%
+  slice(which.max(GradePoints)) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
 
+head(prereq_biol227_check)
+```
 
+```{r}
+prereq_biol227 <- p5 %>%
+  filter(PrimarySubject == "BIOL" & PrimaryCatalogNumber == "227") %>%
+  filter(!GradeSubgroup == "P") %>%
+  group_by(StudentID_Anon) %>%
+  slice(which.max(GradePoints))
+```
 
+#### Join with statics
 
+```{r}
+statics_w_bio227 <- left_join(statics, prereq_biol227, by = "StudentID_Anon")
+```
 
+```{r, fig.width = 8, fig.height = 7}
+tmp_cor <- cor(statics_w_bio227$NormalizedScore, statics_w_bio227$GradePoints, use = "complete.obs")
+tmp_cor
 
+lm_eqn <- function(df){
+    m <- lm(NormalizedScore ~ GradePoints, df);
+    eq <- substitute(italic(NormalizedScore) == a + b %.% italic(GradePoints)*","~~italic(r)^2~"="~r2, 
+         list(a = format(unname(coef(m)[1]), digits = 2),
+              b = format(unname(coef(m)[2]), digits = 2),
+             r2 = format(summary(m)$r.squared, digits = 3)))
+    as.character(as.expression(eq));
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ggplot(statics_w_bio227, aes(y = NormalizedScore, x = GradePoints)) +
+  geom_point(alpha = 0.75) +
+  my_theme() +
+  labs(title = "SU20 BIOL 228 Performance by BIOL 227 Outcome", 
+       subtitle = lm_eqn(statics_w_bio227),
+       x = "Grade Points in BIOL 227",
+       y = "Grade in BIOL 228",
+       caption = "Note: Excludes students without BIOL 227 GPA records \n Excludes P/F Grades, excludes AUD/W/CW/I") +
+  geom_smooth(method = "lm") +
+  geom_text(size = 4, x = 200, y = 200, label = lm_eqn(statics_w_bio227), parse = TRUE)
+```
 
 
 
