@@ -241,117 +241,32 @@ viz
 #### Outcomes by Student Credit Load
 
 ```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
-statics %>%
-  left_join(sis_no_acad_plan, by = "StudentID_Anon") %>%
-  filter(!SISGradeLetter %in% c('W', 'CW', 'I')) %>%
-  ggplot(aes(y = NormalizedScore, x = FullTimePartTimeDescription)) +
-  geom_boxplot(aes(fill = FullTimePartTimeDescription)) +
-  geom_jitter(width = 0.10) +
-  my_theme() +
-  labs(title = "Course Outcomes by Student Credit Load", 
-       y = "Course Grade (Percent)", 
-       x = "", 
-       color = "Credit Load",
-       subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
-       caption = "Note: This dataset excludes students who withdrew or had an incomplete term") +
-  scale_fill_manual(values = c("#009DD9", "#999999")) +
-  theme(legend.position = "") +
-  scale_y_continuous(limits = c(0, 100)) 
+v <- viz_OutcomesByStudentCreditLoad(statics, sis_no_acad_plan)
 ```
 
 #### Outcomes by Gender
 
 ```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
-statics %>%
-  left_join(sis_no_acad_plan, by = "StudentID_Anon") %>%
-  filter(!SISGradeLetter %in% c('W', 'CW', 'I')) %>%
-  ggplot(aes(y = NormalizedScore, x = Gender)) +
-  geom_boxplot(aes(fill = Gender)) +
-  geom_jitter(width = 0.10) +
-  my_theme() +
-  labs(title = "Course Outcomes by Gender", 
-       y = "Course Grade (Percent)", 
-       x = "", 
-       color = "Credit Load",
-       subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
-       caption = "Note: This dataset excludes students who withdrew or had an incomplete term") +
-  scale_fill_manual(values = c("#009DD9", "#999999")) +
-  theme(legend.position = "") +
-  scale_y_continuous(limits = c(0, 100)) 
+v <- viz_OutcomesByGender(statics, sis_no_acad_plan)
 ```
+
 
 #### Outcomes by First Time Status
 
 ```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
-statics %>%
-  left_join(sis_no_acad_plan, by = "StudentID_Anon") %>%
-  filter(!SISGradeLetter %in% c('W', 'CW', 'I')) %>%
-  ggplot(aes(y = NormalizedScore, x = as.factor(FirstTermAtInstution))) +
-  geom_boxplot(aes(fill = as.factor(FirstTermAtInstution))) +
-  geom_jitter(width = 0.10) +
-  my_theme() +
-  labs(title = "Course Outcomes by First Time at Inst. Status", 
-       y = "Course Grade (Percent)", 
-       x = "", 
-       color = "Credit Load",
-       subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
-       caption = "Note: This dataset excludes students who withdrew or had an incomplete term") +
-  scale_fill_manual(values = c("#009DD9", "#999999")) +
-  theme(legend.position = "") +
-  scale_y_continuous(limits = c(0, 100)) 
+v <- viz_OutcomesByFirstTermAtInstitution(statics, sis_no_acad_plan)
 ```
 
-#### Outcomes by First Generation
+#### Outcomes by Academic Level
 
 ```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
-tmp <- statics %>%
-  left_join(sis_no_acad_plan, by = "StudentID_Anon") %>%
-  filter(!SISGradeLetter %in% c('W', 'CW', 'I')) %>%
-  mutate(Description = factor(Description, levels=c("Freshman", "Sophomore", "Junior", "Senior", "Post-Bacc Undergraduate")))
-
-ggplot(tmp, aes(y = NormalizedScore, x = as.factor(Description))) +
-  geom_boxplot(aes(fill = as.factor(Description)), outlier.shape = NA) +
-  geom_jitter(width = 0.10) +
-  my_theme() +
-  labs(title = "Course Outcomes by First Generation Status", 
-       y = "Course Grade (Percent)", 
-       x = "", 
-       color = "Credit Load",
-       subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
-       caption = "Note: This dataset excludes students who withdrew or had an incomplete term") +
-  scale_fill_manual(values = c("#009DD9", "#999999", "#999999", "#999999", "#999999")) +
-  theme(legend.position = "") +
-  scale_x_discrete(labels = abbreviate) +
-  scale_y_continuous(limits = c(0, 100)) #+
-  #geom_text_repel(aes(y = NormalizedScore, x = as.factor(Description), label = round(NormalizedScore,0)))
-  
+v <- viz_OutcomesByAcademicLevel(statics, sis_no_acad_plan)
 ```
 
-
-
+#### Outcomes by First Gen
 
 ```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
-tmp <- statics %>%
-  left_join(sis_no_acad_plan, by = "StudentID_Anon") %>%
-  filter(!SISGradeLetter %in% c('W', 'CW', 'I')) %>%
-  mutate(HasTransferCumGPA = factor(HasTransferCumGPA, levels=c("0", "1")))
-
-ggplot(tmp, aes(y = NormalizedScore, x = as.factor(HasTransferCumGPA))) +
-  geom_boxplot(aes(fill = as.factor(HasTransferCumGPA)), outlier.shape = NA) +
-  geom_jitter(width = 0.10) +
-  my_theme() +
-  labs(title = "Course Outcomes by First Generation Status", 
-       y = "Course Grade (Percent)", 
-       x = "", 
-       color = "Credit Load",
-       subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
-       caption = "Note: This dataset excludes students who withdrew or had an incomplete term") +
-  scale_fill_manual(values = c("#009DD9", "#999999", "#999999", "#999999", "#999999")) +
-  theme(legend.position = "") +
-  scale_x_discrete(labels = abbreviate) +
-  scale_y_continuous(limits = c(0, 100)) #+
-  #geom_text_repel(aes(y = NormalizedScore, x = as.factor(Description), label = round(NormalizedScore,0)))
-  
+v <- viz_OutcomesByFirstGeneration(statics, sis_no_acad_plan)
 ```
 
 
