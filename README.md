@@ -17,4 +17,7 @@ While the code remains flexible and extensible to suit future feature developmen
 * `statics.sql`
 * `submissions.sql`
 
+**Optional queries**
+* `prerequisites.sql`
+
 To run the pipeline and produce data visualizations, datasets (named according to the corresponding SQL query title) must be produced and placed in a single repository, which `main.Rmd` will use to load and process the data. 
