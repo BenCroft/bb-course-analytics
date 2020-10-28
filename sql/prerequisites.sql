@@ -12,7 +12,7 @@ SELECT
 	fca.CourseAttribute, fca.CourseAttributeValue, dca.ValueFormalDescription,
 	/*Student Enrollment and Grade*/
 	ds.SourceKey AS StudentID, EnrolledClassCount, DropCount, WithdrawCount, CreditsAttempted, CreditsEarned, dg.EarnCreditIndicator, dg.SuccessIndicator,
-	HasClassGrade, ClassGrade, dg.GradeKey, dg.SourceKey AS GradeLetter, dg.GradeDescription, dg.GradeSubgroup, dg.GradeGroup, dg.GradingBasisDescription
+	HasClassGrade, ClassGrade, dg.GradeKey, dg.SourceKey AS GradeLetter, dg.GradePoints, dg.GradeDescription, dg.GradeSubgroup, dg.GradeGroup, dg.GradingBasisDescription
 
 FROM Final.FactRegistration fr
 	JOIN Final.DimClassNumber dcn
