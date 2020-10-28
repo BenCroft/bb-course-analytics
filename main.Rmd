@@ -257,35 +257,9 @@ v <- viz_OutcomesByFirstGeneration(statics, sis_no_acad_plan)
 
 ### Outcomes by Plan
 
-```{r}
-viz_OutcomesByFirstGeneration <- function(statics, sis_acad_plan) {
-  
-  # Create plot
-  tmp <- statics %>%
-    left_join(sis_no_acad_plan, by = "StudentID_Anon") %>%
-    filter(!SISGradeLetter %in% c('W', 'CW', 'I')) %>%
-    mutate(FirstGen = case_when(FirstGen == "First Generation (Y)" ~ "First Gen",
-                                FirstGen == "Not First Generation (N)" ~ "Not First Gen",
-                                FirstGen == "Unknown" ~ "Unknown"))
-  
-  g <- ggplot(tmp, aes(y = NormalizedScore, x = as.factor(FirstGen))) +
-    geom_boxplot(aes(fill = as.factor(FirstGen)), outlier.shape = NA) +
-    geom_jitter(width = 0.10) +
-    my_theme() +
-    labs(title = "Course Outcomes by First Generation Status", 
-         y = "Course Grade (Percent)", 
-         x = "", 
-         color = "Credit Load",
-         subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
-         caption = "Note: This dataset excludes students who withdrew or had an incomplete term") +
-    scale_fill_manual(values = c("#009DD9", "#999999", "#999999", "#999999", "#999999")) +
-    theme(legend.position = "") +
-    #scale_x_discrete(labels = abbreviate) +
-    scale_y_continuous(limits = c(0, 100))
-  
-}
-
+```{r, fig.height = 7, fig.width = 8}
 v <- viz_OutcomesByAcademicPlan(statics, sis_acad_plan)
+v
 ```
 
 

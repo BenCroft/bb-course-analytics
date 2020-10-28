@@ -199,6 +199,35 @@ viz_OutcomesByFirstGeneration <- function(statics, sis_no_acad_plan) {
 }
 
 
+viz_OutcomesByAcademicPlan <- function(statics, sis_acad_plan) {
+  
+  # Create plot
+  tmp <- statics %>%
+    left_join(sis_acad_plan, by = "StudentID_Anon") %>%
+    filter(!SISGradeLetter %in% c('W', 'CW', 'I')) %>%
+    filter(!is.na(AcademicPlan))
+  
+  g <- ggplot(tmp, aes(y = NormalizedScore, x = AcademicPlan)) +
+    geom_boxplot(aes(fill = as.factor(AcademicPlan)), outlier.shape = NA) +
+    geom_jitter(width = 0.10) +
+    my_theme() +
+    labs(title = "Course Outcomes by Academic Plan", 
+         y = "Course Grade (Percent)", 
+         x = "", 
+         color = "Credit Load",
+         subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
+         caption = "Note: This dataset excludes students who withdrew or had an incomplete term. \n This dataset does not illustrate Academic Plans with less than 5 students. \n Students may appear in more than one plan.") +
+    scale_fill_manual(values = c("#009DD9", "#999999", "#999999", "#999999", "#999999",
+                                 "#999999","#999999","#999999","#999999","#999999","#999999")) +
+    theme(legend.position = "",
+          axis.text.x = element_text(angle = 45, vjust = 0.5),
+          plot.caption = element_text(color = "#707276", size = 9, face = "plain")) +
+    #scale_x_discrete(labels = abbreviate) +
+    scale_y_continuous(limits = c(0, 100)) 
+  
+  
+}
+
 
 viz_CourseItemGradeDistributions <- function(grades) {
   # #############################################
