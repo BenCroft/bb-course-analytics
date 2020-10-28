@@ -295,11 +295,16 @@ statics %>%
                                                              "B+", "B", "B-", 
                                                              "C+", "C", "C-", 
                                                              "D+", "D", "D-", 
-                                                             "F", "CW", "W"))) %>%
+                                                             "F", "CW", "W", "I"))) %>%
   arrange(SISGradeLetter)
   
 ```
 
+```{r}
+statics %>%
+  group_by(SISGradeLetter) %>%
+  summarise(n())
+```
 
 
 

@@ -45,7 +45,7 @@ viz_FinalGradeDistribution <- function(statics) {
                                                              "B+", "B", "B-", 
                                                              "C+", "C", "C-", 
                                                              "D+", "D", "D-", 
-                                                             "F", "CW", "W")))
+                                                             "F", "CW", "W", "I")))
   
   statis_viz_df2 <- data.frame(table(statics_viz_df1)) %>%
     rename(SISGradeLetter = statics_viz_df1) %>%
