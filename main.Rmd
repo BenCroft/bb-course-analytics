@@ -352,24 +352,27 @@ prerequisites_input <- read.csv(prerequisites_path)
 prerequisites <- prerequisites_input
 ```
 
+#### Fix column names
+
 ```{r}
 colnames(prerequisites) <- c("TermKey", "TermSourceKey", "SessionCode", "ClassNumberSectionUniqueDescription", "ClassNumberUniqueDescription",
                              "PrimarySubject", "PrimaryCatalogNumber", "ClassSection", "PrimaryComponent", "CourseAttribute", "CourseAttributeValue",
                              "ValueFormalDescription", "StudentID", "EnrolledClassCount", "DropCount", "WithdrawCount", "CreditsAttempted",
-                             "CreditsEarned", "EarnCreditIndicator", "SuccessInidicator", "HasClassGrade", "ClassGrade", "GradeKey",
+                             "CreditsEarned", "EarnCreditIndicator", "SuccessInidicator", "VersionForGrade", "HasClassGrade", "ClassGrade", "GradeKey",
                              "GradeLetter", "GradePoints", "GradeDescription", "GradeSubgroup", "GradeGroup", "GradingBasisDescription")
 ```
 
-```{r}
-head(prerequisites)
-```
+#### Get list of course attributes in prereqs
 
 ```{r}
 table(prerequisites$ValueFormalDescription)
-
 ```
 
+#### Clean prereqs
 
+```{r}
+table(prerequisites$GradingBasisDescription, prerequisites$GradeLetter)
+```
 
 ```{r}
 # Clean data
@@ -377,21 +380,28 @@ p1 <- prerequisites %>%
   filter(EnrolledClassCount == 1,
          DropCount == 0,
          WithdrawCount == 0) %>%
-  filter(HasClassGrade == 1) %>%
-  select(StudentID, TermSourceKey, PrimarySubject, PrimaryCatalogNumber, ClassSection, GradeLetter, GradePoints, GradeDescription, GradeSubgroup, GradeGroup,
-         GradingBasisDescription, ValueFormalDescription)
+  filter(!GradingBasisDescription %in% c("Administrative Grades", "Audit", "Complete Withdrawal", "Incomplete", "Non-Graded Component")) %>%
+  # filter(HasClassGrade == 1) %>%     # Courses with "P" do not have ==1 here
+  select(StudentID, TermSourceKey, PrimarySubject, PrimaryCatalogNumber, ClassSection, VersionForGrade, GradeLetter, GradePoints, GradeDescription, GradeSubgroup, GradeGroup, GradingBasisDescription, ValueFormalDescription)
+```
 
+#### Cast course attributes to dummy vars
 
+```{r}
 # Cast data
 p2 <- reshape2::dcast(p1, 
-                      StudentID + TermSourceKey + PrimarySubject + PrimaryCatalogNumber + ClassSection + GradeLetter + GradePoints + 
+                      StudentID + TermSourceKey + PrimarySubject + PrimaryCatalogNumber + ClassSection + VersionForGrade + GradeLetter + GradePoints + 
                         GradeDescription + GradeSubgroup + GradeGroup + GradingBasisDescription ~ ValueFormalDescription, 
                       value.var = "ValueFormalDescription")
+```
 
+```{r}
 # Fix spaces in column names
 names(p2) <- str_replace_all(names(p2), c(" " = ".",
                                           "," = ""))
+```
 
+```{r}
 to_one <- function(x) {
   ifelse(x >= 1, 1, 0)
 }
@@ -404,7 +414,14 @@ p3 <- p2 %>%
             .funs = to_one)
 ```
 
+#### Ensure no duplicate or conflicting student-term-grades
 
+```{r}
+p3 %>%
+  group_by(StudentID, TermSourceKey, PrimarySubject, PrimaryCatalogNumber) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+```
 
 
 
