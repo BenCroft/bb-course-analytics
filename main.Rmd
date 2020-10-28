@@ -32,10 +32,12 @@ course_directory <- paste0("/Users/bencroft/", course, '/input/')
 library(dplyr)
 library(ggplot2)
 library(lubridate)
+library(data.table)
 library(scales)
 library(stringr)
 library(ggrepel)
 library(ggridges)
+library(ggpmisc)
 ```
 
 ## Load helper scripts (functions)
@@ -222,36 +224,42 @@ sis_no_acad_plan <- sis_no_acad_plan %>%
 
 ```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
 v <- viz_FinalGradeDistribution(statics)
+v
 ```
 
 #### Outcomes by Student Credit Load
 
 ```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
 v <- viz_OutcomesByStudentCreditLoad(statics, sis_no_acad_plan)
+v
 ```
 
 #### Outcomes by Gender
 
 ```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
 v <- viz_OutcomesByGender(statics, sis_no_acad_plan)
+v
 ```
 
 #### Outcomes by First Time Status
 
 ```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
 v <- viz_OutcomesByFirstTermAtInstitution(statics, sis_no_acad_plan)
+v
 ```
 
 #### Outcomes by Academic Level
 
 ```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
 v <- viz_OutcomesByAcademicLevel(statics, sis_no_acad_plan)
+v
 ```
 
 #### Outcomes by First Gen
 
 ```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
 v <- viz_OutcomesByFirstGeneration(statics, sis_no_acad_plan)
+v
 ```
 
 
@@ -269,7 +277,7 @@ v
 
 ### Item Grades
 
-```{r, fig.height = 11, fig.width = 8}
+```{r, fig.height = 12, fig.width = 9}
 v <- viz_CourseItemGradeDistributions(grades)
 v
 ```
@@ -288,18 +296,21 @@ t <- table_ActivityBySISGradeLetter(statics)
 
 ```{r, fig.width = 8, fig.height = 7}
 v <- viz_Activity_HoursBySISGradeLetter(statics)
+v
 ```
 
 #### Boxplot: Logins
 
 ```{r}
 v <- viz_Activity_LoginsBySISGradeLetter(statics)
+v
 ```
 
 #### Boxplot: Post Characters
 
 ```{r}
 v <- viz_Activity_CharactersBySISGradeLetter(statics)
+v
 ```
 
 ### Bb Activity by FirstGen
@@ -308,24 +319,28 @@ v <- viz_Activity_CharactersBySISGradeLetter(statics)
 
 ```{r}
 t <- table_ActivityByFirstGen(statics, sis_no_acad_plan)
+t
 ```
 
 #### Boxplot: Hours
 
 ```{r}
 v <- viz_Activity_HoursByFirstGen(statics, sis_no_acad_plan)
+v
 ```
 
 #### Boxplot: Logins
 
 ```{r}
 v <- viz_Activity_LoginsByFirstGen(statics, sis_no_acad_plan)
+v
 ```
 
 #### Boxplot: Post Characters
 
 ```{r}
 v <- viz_Activity_CharactersByFirstGen(statics, sis_no_acad_plan)
+v
 ```
 
 
@@ -344,68 +359,162 @@ prerequisites_path <- paste0(course_directory, "prerequisites.csv")
 #### Read data into memory
 
 ```{r}
-prerequisites_input    <- read.csv(prerequisites_path)
+prerequisites_input <- read.csv(prerequisites_path)
 ```
 
 ```{r}
 prerequisites <- prerequisites_input
 ```
 
+### Process data
+
+#### Fix column names
+
 ```{r}
 colnames(prerequisites) <- c("TermKey", "TermSourceKey", "SessionCode", "ClassNumberSectionUniqueDescription", "ClassNumberUniqueDescription",
                              "PrimarySubject", "PrimaryCatalogNumber", "ClassSection", "PrimaryComponent", "CourseAttribute", "CourseAttributeValue",
                              "ValueFormalDescription", "StudentID", "EnrolledClassCount", "DropCount", "WithdrawCount", "CreditsAttempted",
-                             "CreditsEarned", "EarnCreditIndicator", "SuccessInidicator", "HassClassGrade", "ClassGrade", "GradeKey",
-                             "GradeLetter", "GradeDescription", "GradeSubgroup", "GradeGroup", "GradingBasisDescription")
+                             "CreditsEarned", "EarnCreditIndicator", "SuccessInidicator", "VersionForGrade", "HasClassGrade", "ClassGrade", "GradeKey",
+                             "GradeLetter", "GradePoints", "GradeDescription", "GradeSubgroup", "GradeGroup", "GradingBasisDescription")
+```
+
+#### Get list of course attributes in prereqs
+
+```{r}
+table(prerequisites$ValueFormalDescription)
+```
+
+#### Clean prereqs
+
+```{r}
+table(prerequisites$GradingBasisDescription, prerequisites$GradeLetter)
 ```
 
 ```{r}
-head(prerequisites)
+# Clean data
+p1 <- prerequisites %>%
+  filter(EnrolledClassCount == 1,
+         DropCount == 0,
+         WithdrawCount == 0) %>%
+  filter(!GradingBasisDescription %in% c("Administrative Grades", "Audit", "Complete Withdrawal", "Incomplete", "Non-Graded Component")) %>%
+  # filter(HasClassGrade == 1) %>%     # Courses with "P" do not have ==1 here
+  select(StudentID, TermSourceKey, PrimarySubject, PrimaryCatalogNumber, ClassSection, VersionForGrade, GradeLetter, GradePoints, GradeDescription, GradeSubgroup, GradeGroup, GradingBasisDescription, ValueFormalDescription)
+```
+
+#### Cast course attributes to dummy vars
+
+```{r}
+# Cast data
+p2 <- reshape2::dcast(p1, 
+                      StudentID + TermSourceKey + PrimarySubject + PrimaryCatalogNumber + ClassSection + VersionForGrade + GradeLetter + GradePoints + 
+                        GradeDescription + GradeSubgroup + GradeGroup + GradingBasisDescription ~ ValueFormalDescription, 
+                      value.var = "ValueFormalDescription")
 ```
 
 ```{r}
-# Need to get grade percent
+# Fix spaces in column names
+names(p2) <- str_replace_all(names(p2), c(" " = ".",
+                                          "," = ""))
+```
 
+```{r}
+to_one <- function(x) {
+  ifelse(x >= 1, 1, 0)
+}
 
+p3 <- p2 %>%
+  mutate_at(.vars = vars(Afterwork.Program, Area.III.Core.course, Distance.Learning.Course, Dual.Enrollment, Exclude.from.Bronco.Budget,
+                         Foundations.of.Natural.Physical.and.Applied.Sci, GEM.Common.Course.Number, Imaging.Sciences.BS.OPF.O, Military.Programs,
+                         Mountain.Home.Program, Natural.Physical.and.Applied.Sciences, Online.Degree.Pathway.Lower.Div.Classes.OPF.O, Scientific.Ways.of.Knowing,
+                         Weekend.University),
+            .funs = to_one)
+```
+
+#### Ensure no duplicate or conflicting student-term-grades
+
+```{r}
+p3 %>%
+  group_by(StudentID, TermSourceKey, PrimarySubject, PrimaryCatalogNumber) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
 ```
 
 
+### Anonymize data
+
+#### Pull hash table for anonymous ids
+
+```{r}
+# Convert prereq StudentID to a factor to be able to join
+p4 <- p3 %>%
+  mutate(StudentID = as.factor(StudentID))
+
+p4 <- right_join(p4, student_anon_df, by = c("StudentID"))
+```
+
+### Remove PII
+
+```{r}
+p5 <- p4 %>%
+  select(-StudentID)
+```
 
 
+```{r}
+p5
+```
 
 
+### Prereq 1: BIOL 227
+
+#### Choose only highest prereq grade and ensure no duplicates
+
+```{r}
+prereq_biol227_check <- p5 %>%
+  filter(PrimarySubject == "BIOL" & PrimaryCatalogNumber == "227") %>%
+  filter(!GradeSubgroup == "P") %>%
+  group_by(StudentID_Anon) %>%
+  slice(which.max(GradePoints)) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+head(prereq_biol227_check)
+```
+
+```{r}
+prereq_biol227 <- p5 %>%
+  filter(PrimarySubject == "BIOL" & PrimaryCatalogNumber == "227") %>%
+  filter(!GradeSubgroup == "P") %>%
+  group_by(StudentID_Anon) %>%
+  slice(which.max(GradePoints))
+```
+
+#### Join with statics
+
+```{r}
+statics_w_bio227 <- left_join(statics, prereq_biol227, by = "StudentID_Anon")
+```
+
+```{r, fig.width = 9, fig.height = 7}
+
+formula <- y ~ x
 
 
+ggplot(statics_w_bio227, aes(y = NormalizedScore, x = GradePoints)) +
+  geom_point(alpha = 0.75) +
+  my_theme() +
+  labs(title = "Relationship between Course and Prereq Performance", 
+       subtitle = "Course: SU20 BIOL 228 \nPrereq: BIOL 227",
+       x = "Grade Points in BIOL 227",
+       y = "Grade in BIOL 228",
+       caption = "Note: Excludes students without BIOL 227 GPA records \n Excludes P/F Grades, excludes AUD/W/CW/I") +
+  geom_smooth(method = "lm") +
+  stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+               label.x.npc = "right", label.y.npc = 0.30,
+               formula = formula, parse = TRUE, size = 5,
+               color = "blue")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```
 
 
 
