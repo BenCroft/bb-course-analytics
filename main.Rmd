@@ -291,6 +291,95 @@ v <- viz_Activity_CharactersByFirstGen(statics, sis_no_acad_plan)
 ```
 
 
+# ********************
+
+## Prerequisite analysis
+
+### Load data
+
+#### Set data paths
+
+```{r}
+prerequisites_path <- paste0(course_directory, "prerequisites.csv")
+```
+
+#### Read data into memory
+
+```{r}
+prerequisites_input    <- read.csv(prerequisites_path)
+```
+
+```{r}
+prerequisites <- prerequisites_input
+```
+
+```{r}
+colnames(prerequisites) <- c("TermKey", "TermSourceKey", "SessionCode", "ClassNumberSectionUniqueDescription", "ClassNumberUniqueDescription",
+                             "PrimarySubject", "PrimaryCatalogNumber", "ClassSection", "PrimaryComponent", "CourseAttribute", "CourseAttributeValue",
+                             "ValueFormalDescription", "StudentID", "EnrolledClassCount", "DropCount", "WithdrawCount", "CreditsAttempted",
+                             "CreditsEarned", "EarnCreditIndicator", "SuccessInidicator", "HassClassGrade", "ClassGrade", "GradeKey",
+                             "GradeLetter", "GradeDescription", "GradeSubgroup", "GradeGroup", "GradingBasisDescription")
+```
+
+```{r}
+head(prerequisites)
+```
+
+```{r}
+# Need to get grade percent
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
