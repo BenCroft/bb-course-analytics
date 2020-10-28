@@ -35,6 +35,7 @@ library(lubridate)
 library(scales)
 library(stringr)
 library(ggrepel)
+library(ggridges)
 ```
 
 ## Load helper scripts (functions)
@@ -234,8 +235,7 @@ sis_no_acad_plan <- sis_no_acad_plan %>%
 #### Final Grade Distribution
 
 ```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
-viz <- viz_FinalGradeDistribution(statics)
-viz
+v <- viz_FinalGradeDistribution(statics)
 ```
 
 #### Outcomes by Student Credit Load
@@ -249,7 +249,6 @@ v <- viz_OutcomesByStudentCreditLoad(statics, sis_no_acad_plan)
 ```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
 v <- viz_OutcomesByGender(statics, sis_no_acad_plan)
 ```
-
 
 #### Outcomes by First Time Status
 
@@ -269,7 +268,25 @@ v <- viz_OutcomesByAcademicLevel(statics, sis_no_acad_plan)
 v <- viz_OutcomesByFirstGeneration(statics, sis_no_acad_plan)
 ```
 
+```{r}
+courseItemStudentSummary
+```
 
+```{r}
+courseItemStudentSummary
+```
+
+```{r}
+ifelse(nchar(courseItemStudentSummary$CourseItem) > 13, paste0(strtrim(courseItemStudentSummary$CourseItem, 10), '...'), courseItemStudentSummary$CourseItem)
+```
+
+
+### Item Grades
+
+```{r, fig.height = 11, fig.width = 8}
+v <- viz_CourseItemGradeDistributions(grades)
+v
+```
 
 
 
