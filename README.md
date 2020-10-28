@@ -1,4 +1,4 @@
-# Course Analytics Report
+# Online Course Analytics
 
 ## Overview
 
