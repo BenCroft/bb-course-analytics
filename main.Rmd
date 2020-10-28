@@ -224,36 +224,42 @@ sis_no_acad_plan <- sis_no_acad_plan %>%
 
 ```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
 v <- viz_FinalGradeDistribution(statics)
+v
 ```
 
 #### Outcomes by Student Credit Load
 
 ```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
 v <- viz_OutcomesByStudentCreditLoad(statics, sis_no_acad_plan)
+v
 ```
 
 #### Outcomes by Gender
 
 ```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
 v <- viz_OutcomesByGender(statics, sis_no_acad_plan)
+v
 ```
 
 #### Outcomes by First Time Status
 
 ```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
 v <- viz_OutcomesByFirstTermAtInstitution(statics, sis_no_acad_plan)
+v
 ```
 
 #### Outcomes by Academic Level
 
 ```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
 v <- viz_OutcomesByAcademicLevel(statics, sis_no_acad_plan)
+v
 ```
 
 #### Outcomes by First Gen
 
 ```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
 v <- viz_OutcomesByFirstGeneration(statics, sis_no_acad_plan)
+v
 ```
 
 
@@ -271,7 +277,7 @@ v
 
 ### Item Grades
 
-```{r, fig.height = 11, fig.width = 8}
+```{r, fig.height = 12, fig.width = 9}
 v <- viz_CourseItemGradeDistributions(grades)
 v
 ```
@@ -290,18 +296,21 @@ t <- table_ActivityBySISGradeLetter(statics)
 
 ```{r, fig.width = 8, fig.height = 7}
 v <- viz_Activity_HoursBySISGradeLetter(statics)
+v
 ```
 
 #### Boxplot: Logins
 
 ```{r}
 v <- viz_Activity_LoginsBySISGradeLetter(statics)
+v
 ```
 
 #### Boxplot: Post Characters
 
 ```{r}
 v <- viz_Activity_CharactersBySISGradeLetter(statics)
+v
 ```
 
 ### Bb Activity by FirstGen
@@ -310,24 +319,28 @@ v <- viz_Activity_CharactersBySISGradeLetter(statics)
 
 ```{r}
 t <- table_ActivityByFirstGen(statics, sis_no_acad_plan)
+t
 ```
 
 #### Boxplot: Hours
 
 ```{r}
 v <- viz_Activity_HoursByFirstGen(statics, sis_no_acad_plan)
+v
 ```
 
 #### Boxplot: Logins
 
 ```{r}
 v <- viz_Activity_LoginsByFirstGen(statics, sis_no_acad_plan)
+v
 ```
 
 #### Boxplot: Post Characters
 
 ```{r}
 v <- viz_Activity_CharactersByFirstGen(statics, sis_no_acad_plan)
+v
 ```
 
 
