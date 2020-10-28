@@ -282,177 +282,53 @@ v
 #### Table: All
 
 ```{r}
-statics %>%
-  group_by(SISGradeLetter) %>%
-  summarise(StudentCount = n(),
-            Minutes_Mean = round(mean(CourseAccessMinutes),1),
-            Hours_Mean = round(mean(CourseAccessMinutes/60),1),
-            Minutes_Median = round(median(CourseAccessMinutes),1),
-            Hours_Median = round(median(CourseAccessMinutes/60),1),
-            Logins_Mean = round(mean(CourseAccesses),1),
-            Logins_Median = round(median(CourseAccesses),1),
-            Db_Posts_Mean = round(mean(ForumPosts),1),
-            Db_Posts_Median =round(median(ForumPosts),1),
-            Db_Chars_Mean = round(mean(ForumPostCharacters),1),
-            Db_Chars_Median = round(median(ForumPostCharacters),1)) %>%
-  mutate(SISGradeLetter = factor(SISGradeLetter,levels = c("A+", "A", "A-", 
-                                                             "B+", "B", "B-", 
-                                                             "C+", "C", "C-", 
-                                                             "D+", "D", "D-", 
-                                                             "F", "CW", "W", "I"))) %>%
-  arrange(SISGradeLetter)
-  
+t <- table_ActivityBySISGradeLetter(statics)
 ```
 
 #### Boxplot: Hours
 
 ```{r, fig.width = 8, fig.height = 7}
-tmp <- statics %>%
-    mutate(SISGradeLetter = factor(SISGradeLetter,levels = c("A+", "A", "A-", 
-                                                             "B+", "B", "B-", 
-                                                             "C+", "C", "C-", 
-                                                             "D+", "D", "D-", 
-                                                             "F", "CW", "W", "I")))
-
-ggplot(tmp, aes(x = SISGradeLetter, y = CourseAccessMinutes/60, fill = SISGradeLetter)) +
-  geom_boxplot() + 
-  geom_jitter(color = "black", width = 0.1, alpha = 0.8, size = 1) +
-  scale_fill_viridis_d() +
-  my_theme() +
-  theme(legend.position = "none") +
-  coord_flip() +
-  xlab("") + 
-  ylab("Time Spent in Blackboard (Hours)") +
-  scale_x_discrete(limits = rev(levels(tmp$SISGradeLetter)))
+v <- viz_Activity_HoursBySISGradeLetter(statics)
 ```
-
 
 #### Boxplot: Logins
 
-```{r, fig.width = 8, fig.height = 7}
-tmp <- statics %>%
-    mutate(SISGradeLetter = factor(SISGradeLetter,levels = c("A+", "A", "A-", 
-                                                             "B+", "B", "B-", 
-                                                             "C+", "C", "C-", 
-                                                             "D+", "D", "D-", 
-                                                             "F", "CW", "W", "I")))
-
-ggplot(tmp, aes(x = SISGradeLetter, y = ForumPostCharacters, fill = SISGradeLetter)) +
-  geom_boxplot() + 
-  geom_jitter(color = "black", width = 0.1, alpha = 0.8, size = 1) +
-  scale_fill_viridis_d() +
-  my_theme() +
-  theme(legend.position = "none") +
-  coord_flip() +
-  xlab("") + 
-  ylab("Number of Logins") +
-  scale_x_discrete(limits = rev(levels(tmp$SISGradeLetter)))
+```{r}
+v <- viz_Activity_LoginsBySISGradeLetter(statics)
 ```
-
-
 
 #### Boxplot: Post Characters
 
-```{r, fig.width = 8, fig.height = 7}
-tmp <- statics %>%
-    mutate(SISGradeLetter = factor(SISGradeLetter,levels = c("A+", "A", "A-", 
-                                                             "B+", "B", "B-", 
-                                                             "C+", "C", "C-", 
-                                                             "D+", "D", "D-", 
-                                                             "F", "CW", "W", "I")))
-
-ggplot(tmp, aes(x = SISGradeLetter, y = ForumPostCharacters, fill = SISGradeLetter)) +
-  geom_boxplot() + 
-  geom_jitter(color = "black", width = 0.1, alpha = 0.8, size = 1) +
-  scale_fill_viridis_d() +
-  my_theme() +
-  theme(legend.position = "none") +
-  coord_flip() +
-  xlab("") + 
-  ylab("Forum Post Characters") +
-  scale_x_discrete(limits = rev(levels(tmp$SISGradeLetter)))
+```{r}
+v <- viz_Activity_CharactersBySISGradeLetter(statics)
 ```
-
-
 
 ### Bb Activity by FirstGen
 
 #### Table: All
 
 ```{r}
-statics %>%
-  left_join(sis_no_acad_plan, by = "StudentID_Anon") %>%
-  group_by(FirstGen) %>%
-  filter(!SISGradeLetter %in% c('W', 'CW', 'I')) %>%
-  summarise(StudentCount = n(),
-            Minutes_Mean = round(mean(CourseAccessMinutes),1),
-            Hours_Mean = round(mean(CourseAccessMinutes/60),1),
-            Minutes_Median = round(median(CourseAccessMinutes),1),
-            Hours_Median = round(median(CourseAccessMinutes/60),1),
-            Logins_Mean = round(mean(CourseAccesses),1),
-            Logins_Median = round(median(CourseAccesses),1),
-            Db_Posts_Mean = round(mean(ForumPosts),1),
-            Db_Posts_Median =round(median(ForumPosts),1),
-            Db_Chars_Mean = round(mean(ForumPostCharacters),1),
-            Db_Chars_Median = round(median(ForumPostCharacters),1))
+t <- table_ActivityByFirstGen(statics, sis_no_acad_plan)
 ```
 
 #### Boxplot: Hours
 
-```{r, fig.width = 8, fig.height = 7}
-tmp <- statics %>%
-  left_join(sis_no_acad_plan, by = "StudentID_Anon") %>%
-  filter(!SISGradeLetter %in% c('W', 'CW', 'I'))
-
-ggplot(tmp, aes(x = FirstGen, y = CourseAccessMinutes/60, fill = FirstGen)) +
-  geom_boxplot() + 
-  geom_jitter(color = "black", width = 0.1, alpha = 0.8, size = 1) +
-  scale_fill_viridis_d() +
-  my_theme() +
-  theme(legend.position = "none") +
-  coord_flip() +
-  xlab("") + 
-  ylab("Time Spent in Blackboard (Hours)") +
-  scale_x_discrete(limits = rev(levels(tmp$FirstGen)))
+```{r}
+v <- viz_Activity_HoursByFirstGen(statics, sis_no_acad_plan)
 ```
 
 #### Boxplot: Logins
 
-```{r, fig.width = 8, fig.height = 7}
-tmp <- statics %>%
-  left_join(sis_no_acad_plan, by = "StudentID_Anon") %>%
-  filter(!SISGradeLetter %in% c('W', 'CW', 'I'))
-
-ggplot(tmp, aes(x = FirstGen, y = CourseAccesses, fill = FirstGen)) +
-  geom_boxplot() + 
-  geom_jitter(color = "black", width = 0.1, alpha = 0.8, size = 1) +
-  scale_fill_viridis_d() +
-  my_theme() +
-  theme(legend.position = "none") +
-  coord_flip() +
-  xlab("") + 
-  ylab("Number of Logins") +
-  scale_x_discrete(limits = rev(levels(tmp$FirstGen)))
+```{r}
+v <- viz_Activity_LoginsByFirstGen(statics, sis_no_acad_plan)
 ```
 
 #### Boxplot: Post Characters
 
-```{r, fig.width = 8, fig.height = 7}
-tmp <- statics %>%
-  left_join(sis_no_acad_plan, by = "StudentID_Anon") %>%
-  filter(!SISGradeLetter %in% c('W', 'CW', 'I'))
-
-ggplot(tmp, aes(x = FirstGen, y = ForumPostCharacters, fill = FirstGen)) +
-  geom_boxplot() + 
-  geom_jitter(color = "black", width = 0.1, alpha = 0.8, size = 1) +
-  scale_fill_viridis_d() +
-  my_theme() +
-  theme(legend.position = "none") +
-  coord_flip() +
-  xlab("") + 
-  ylab("Number of Logins") +
-  scale_x_discrete(limits = rev(levels(tmp$FirstGen)))
+```{r}
+v <- viz_Activity_CharactersByFirstGen(statics, sis_no_acad_plan)
 ```
+
 
 
 
