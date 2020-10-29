@@ -1,3 +1,0 @@
-/* sql */
-
-SELECT * FROM Table

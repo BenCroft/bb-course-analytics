@@ -33,6 +33,6 @@ WHERE (ClassNumberUniqueDescription LIKE @PrerequisiteA
 	OR ClassNumberUniqueDescription LIKE @PrerequisiteB
 	OR ClassNumberUniqueDescription LIKE @PrerequisiteC)
 	AND dc.PrimaryComponent = 'LEC'
-	AND fca.VersionKey = 5 /*Census Date*/
+	AND fca.VersionKey = 1 /*Current Snapshot*/
 
 ORDER BY ClassNumber, TermKey, SessionCode, CourseAttribute, StudentID
