@@ -57,7 +57,7 @@ FROM	Final.FactRegistration fr
 
 WHERE	dt.Description in ('Summer 2020')
 AND		dcn.ClassNumberKey IN ('106064', '106065') /*e.g. '106064', get from ClassNumber table*/
-AND     dv.Description = 'End of Term Census'
+AND     dv.VersionKey = 1 /*Current snapshot*/
 
 
 ORDER BY StudentName, Term, Subject, CourseNumber, StudentID, VersionKey, AcademicPlan
