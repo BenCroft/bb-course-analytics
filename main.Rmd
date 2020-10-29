@@ -106,12 +106,22 @@ sis_no_acad_plan <- sis_no_acad_plan %>%
 ### Get plans with 5+ students
 
 ```{r}
-plans_5_or_more <- sis_acad_plan %>%
+plan_counts <- sis_acad_plan %>%
+  select(StudentID, AcademicPlan) %>%
+  distinct() %>%
+  group_by(StudentID, AcademicPlan) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count), AcademicPlan, StudentID) %>%
+  ungroup() %>%
   group_by(AcademicPlan) %>%
-  summarise(c = n()) %>%
-  arrange(desc(c)) %>%
-  filter(c >= 5)
+  summarise(StudentsWithPlan = sum(Count)) %>%
+  arrange(desc(StudentsWithPlan))
+plan_counts
+```
 
+```{r}
+plans_5_or_more <- plan_counts %>%
+  filter(StudentsWithPlan >= 5)
 plans_5_or_more
 ```
 
