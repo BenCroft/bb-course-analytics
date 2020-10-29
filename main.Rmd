@@ -105,7 +105,7 @@ sis_no_acad_plan <- sis_no_acad_plan %>%
 
 ### Get plans with 5+ students
 
-```{r}
+```{r paged.print=TRUE}
 plan_counts <- sis_acad_plan %>%
   select(StudentID, AcademicPlan) %>%
   distinct() %>%
