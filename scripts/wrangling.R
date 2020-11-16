@@ -47,31 +47,31 @@ fix_time_band_24hr <- function(my_data) {
   
   df <- my_data %>%
     mutate(
-      TimeDescription = case_when(
-        TimeDescription == "12 am - 12:59 am" ~ "00",
-        TimeDescription == "1 am - 1:59 am" ~ "01",
-        TimeDescription == "2 am - 2:59 am" ~ "02",
-        TimeDescription == "3 am - 3:59 am" ~ "03",
-        TimeDescription == "4 am - 4:59 am" ~ "04",
-        TimeDescription == "5 am - 5:59 am" ~ "05",
-        TimeDescription == "6 am - 6:59 am" ~ "06",
-        TimeDescription == "7 am - 7:59 am" ~ "07",
-        TimeDescription == "8 am - 8:59 am" ~ "08",
-        TimeDescription == "9 am - 9:59 am" ~ "09",
-        TimeDescription == "10 am - 10:59 am" ~ "10",
-        TimeDescription == "11 am - 11:59 am" ~ "11",
-        TimeDescription == "12 pm - 12:59 pm" ~ "12",
-        TimeDescription == "1 pm - 1:59 pm" ~ "13",
-        TimeDescription == "2 pm - 2:59 pm" ~ "14",
-        TimeDescription == "3 pm - 3:59 pm" ~ "15",
-        TimeDescription == "4 pm - 4:59 pm" ~ "16",
-        TimeDescription == "5 pm - 5:59 pm" ~ "17",
-        TimeDescription == "6 pm - 6:59 pm" ~ "18",
-        TimeDescription == "7 pm - 7:59 pm" ~ "19",
-        TimeDescription == "8 pm - 8:59 pm" ~ "20",
-        TimeDescription == "9 pm - 9:59 pm" ~ "21",
-        TimeDescription == "10 pm - 10:59 pm" ~ "22",
-        TimeDescription == "11 pm - 11:59 pm" ~ "23"
+      TimeDescription24 = case_when(
+        TimeDescription24 == "12 am - 12:59 am" ~ "00",
+        TimeDescription24 == "1 am - 1:59 am" ~ "01",
+        TimeDescription24 == "2 am - 2:59 am" ~ "02",
+        TimeDescription24 == "3 am - 3:59 am" ~ "03",
+        TimeDescription24 == "4 am - 4:59 am" ~ "04",
+        TimeDescription24 == "5 am - 5:59 am" ~ "05",
+        TimeDescription24 == "6 am - 6:59 am" ~ "06",
+        TimeDescription24 == "7 am - 7:59 am" ~ "07",
+        TimeDescription24 == "8 am - 8:59 am" ~ "08",
+        TimeDescription24 == "9 am - 9:59 am" ~ "09",
+        TimeDescription24 == "10 am - 10:59 am" ~ "10",
+        TimeDescription24 == "11 am - 11:59 am" ~ "11",
+        TimeDescription24 == "12 pm - 12:59 pm" ~ "12",
+        TimeDescription24 == "1 pm - 1:59 pm" ~ "13",
+        TimeDescription24 == "2 pm - 2:59 pm" ~ "14",
+        TimeDescription24 == "3 pm - 3:59 pm" ~ "15",
+        TimeDescription24 == "4 pm - 4:59 pm" ~ "16",
+        TimeDescription24 == "5 pm - 5:59 pm" ~ "17",
+        TimeDescription24 == "6 pm - 6:59 pm" ~ "18",
+        TimeDescription24 == "7 pm - 7:59 pm" ~ "19",
+        TimeDescription24 == "8 pm - 8:59 pm" ~ "20",
+        TimeDescription24 == "9 pm - 9:59 pm" ~ "21",
+        TimeDescription24 == "10 pm - 10:59 pm" ~ "22",
+        TimeDescription24 == "11 pm - 11:59 pm" ~ "23"
       )
     )
 }
