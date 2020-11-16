@@ -22,7 +22,6 @@ JOIN Final.DimFaculty df
 ON main.FacultyKey = df.FacultyKey
 
 WHERE dc.PrimarySubject = 'BIOL'
-AND dc.PrimaryCatalogNumber = '228'
 AND dt.Description in ('Fall 2020')
 /*AND		dcn.ClassNumberKey IN ('106064', '106065')*/
 
