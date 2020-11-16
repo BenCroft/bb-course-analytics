@@ -23,6 +23,7 @@ ON main.FacultyKey = df.FacultyKey
 
 WHERE dc.PrimarySubject = 'BIOL'
 AND dt.Description in ('Fall 2020')
+AND dim.Description = 'Online'
 /*AND		dcn.ClassNumberKey IN ('106064', '106065')*/
 
 ORDER BY SourceKey, dc.PrimarySubject, dc.PrimaryCatalogNumber, ClassSection
