@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 # REQUIRED PARAMETERS
-course <- '1203_BIOL_228'
+course <- '1203_BIOL_227'
 course_directory <- paste0("/Users/bencroft/", course, '/input/')
 
 # OPTIONAL PARAMETERS:
@@ -70,6 +70,10 @@ items_input       <- read.csv(items_path)
 statics_input     <- read.csv(statics_path)
 submissions_input <- read.csv(submissions_path)
 sis_input         <- read.csv(sis_path)
+```
+
+```{r}
+grades_path$StudentID
 ```
 
 ```{r}
@@ -183,6 +187,8 @@ items <- create_student_id_col(items)
 statics <- create_student_id_col(statics)
 ```
 
+
+
 #### Create anonymous/random ids
 
 ```{r}
@@ -239,9 +245,6 @@ sis_no_acad_plan <- sis_no_acad_plan %>%
 
 ## *******************************
 
-```{r}
-sis_no_acad_plan
-```
 
 ```{r}
 statics %>%
@@ -267,6 +270,23 @@ v
 ```
 
 #### Outcomes by Student Credit Load
+
+```{r}
+left_join(statics, sis_no_acad_plan, by = "StudentID_Anon")
+```
+
+```{r}
+student_anon_df %>%
+  filter(StudentID_Anon == 91579)
+```
+
+
+
+```{r}
+sis_input %>%
+  filter(StudentID == 114091937)
+```
+
 
 ```{r, fig.retina = 2, fig.width = 8, fig.height = 7}
 viz_OutcomesByStudentCreditLoad2 <- function(statics, sis_no_acad_plan) {
