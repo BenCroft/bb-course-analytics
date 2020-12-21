@@ -91,7 +91,7 @@ viz_OutcomesByStudentCreditLoad <- function(statics, sis_no_acad_plan) {
          y = "Course Grade (Percent)", 
          x = "", 
          color = "Credit Load",
-         subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
+         #subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
          caption = "Note: This dataset excludes students who withdrew or had an incomplete term") +
     scale_fill_manual(values = c("#009DD9", "#999999")) +
     theme(legend.position = "") +
@@ -113,7 +113,7 @@ viz_OutcomesByGender <- function(statics, sis_no_acad_plan) {
          y = "Course Grade (Percent)", 
          x = "", 
          color = "Credit Load",
-         subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
+         #subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
          caption = "Note: This dataset excludes students who withdrew or had an incomplete term") +
     scale_fill_manual(values = c("#009DD9", "#999999")) +
     theme(legend.position = "") +
@@ -135,7 +135,7 @@ viz_OutcomesByFirstTermAtInstitution <- function(statics, sis_no_acad_plan) {
          y = "Course Grade (Percent)", 
          x = "", 
          color = "Credit Load",
-         subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
+         #subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
          caption = "Note: This dataset excludes students who withdrew or had an incomplete term") +
     scale_fill_manual(values = c("#009DD9", "#999999")) +
     theme(legend.position = "") +
@@ -189,7 +189,7 @@ viz_OutcomesByFirstGeneration <- function(statics, sis_no_acad_plan) {
          y = "Course Grade (Percent)", 
          x = "", 
          color = "Credit Load",
-         subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
+         #subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
          caption = "Note: This dataset excludes students who withdrew or had an incomplete term") +
     scale_fill_manual(values = c("#009DD9", "#999999", "#999999", "#999999", "#999999")) +
     theme(legend.position = "") +
@@ -215,7 +215,7 @@ viz_OutcomesByAcademicPlan <- function(statics, sis_acad_plan) {
          y = "Course Grade (Percent)", 
          x = "", 
          color = "Credit Load",
-         subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
+         #subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
          caption = "Note: This dataset excludes students who withdrew or had an incomplete term. \n This dataset does not illustrate Academic Plans with less than 5 students. \n Students may appear in more than one plan.") +
     scale_fill_manual(values = c("#009DD9", "#999999", "#999999", "#999999", "#999999",
                                  "#999999","#999999","#999999","#999999","#999999","#999999")) +
