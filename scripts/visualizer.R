@@ -143,7 +143,7 @@ viz_OutcomesByFirstTermAtInstitution <- function(statics, sis_no_acad_plan) {
 }
 
 
-
+    
 viz_OutcomesByAcademicLevel <- function(statics, sis_no_acad_plan) {
   
   # Create plot

@@ -87,6 +87,18 @@ sis_no_acad_plan <- sis_input
 
 ## Process data
 
+### A4L Data
+
+### Fix time formatting in `dynamics`
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+dynamics <- fix_time_band_24hr(dynamics)
+dynamics <- fix_week_level(dynamics)
+dynamics <- fix_day_of_week(dynamics)
+```
+
+## Process sis_acad_plan
+
 ### Remove duplicates from `sis_no_acad_plan` due to plan and subplan column removal
 
 ```{r}
@@ -102,9 +114,6 @@ sis_no_acad_plan <- sis_no_acad_plan %>%
   select(-AcademicPlan, -AcademicSubPlan) %>%
   distinct()
 ```
-
-
-## Process sis_acad_plan
 
 ### Get plans with 5+ students
 
@@ -138,13 +147,7 @@ sis_acad_plan <- sis_acad_plan %>%
 ```
 
 
-### Fix time formatting in `dynamics`
 
-```{r message=FALSE, warning=FALSE, paged.print=FALSE}
-dynamics <- fix_time_band_24hr(dynamics)
-dynamics <- fix_week_level(dynamics)
-dynamics <- fix_day_of_week(dynamics)
-```
 
 ### Add space in BISQL student names
 
@@ -246,10 +249,14 @@ sis_no_acad_plan <- sis_no_acad_plan %>%
 
 
 ```{r}
-head(statics)
+sis_no_acad_plan %>%
+  group_by(StudentID_Anon) %>%
+  summarize(C = n()) %>%
+  arrange(desc(C))
 ```
 ```{r}
-table(statics$Section)
+length(unique(sis_no_acad_plan$StudentID_Anon))
+nrow(sis_no_acad_plan)
 ```
 
 
@@ -407,6 +414,19 @@ t <- table_ActivityByFirstGen(statics, sis_no_acad_plan)
 t %>%
   kable()
 ```
+
+
+```{r}
+statics %>%
+    left_join(sis_no_acad_plan, by = "StudentID_Anon") %>%
+    group_by(FirstGen) %>%
+    filter(!SISGradeLetter %in% c('W', 'CW', 'I')) %>%
+  select(StudentID_Anon) %>%
+  table()
+```
+
+
+
 
 #### Boxplot: Hours
 
