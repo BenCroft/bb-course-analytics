@@ -38,6 +38,7 @@ library(stringr)
 library(ggrepel)
 library(ggridges)
 library(ggpmisc)
+library(kableExtra)
 ```
 
 ## Load helper scripts (functions)
@@ -403,7 +404,8 @@ v
 
 ```{r}
 t <- table_ActivityByFirstGen(statics, sis_no_acad_plan)
-t
+t %>%
+  kable()
 ```
 
 #### Boxplot: Hours
