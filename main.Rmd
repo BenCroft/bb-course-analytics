@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 # REQUIRED PARAMETERS
-course <- '1203_BIOL_227'
+course <- '1209_ACCT_205'
 course_directory <- paste0("/Users/bencroft/", course, '/input/')
 
 # OPTIONAL PARAMETERS:
@@ -72,9 +72,7 @@ submissions_input <- read.csv(submissions_path)
 sis_input         <- read.csv(sis_path)
 ```
 
-```{r}
-grades_path$StudentID
-```
+
 
 ```{r}
 dynamics <- dynamics_input
@@ -247,15 +245,12 @@ sis_no_acad_plan <- sis_no_acad_plan %>%
 
 
 ```{r}
-statics %>%
-  filter(StudentID_Anon == 91579)
-
-sis_acad_plan %>%
-  filter(StudentID_Anon == 91579)
-
-sis_acad_plan %>%
-  filter(StudentID_Anon == 91579)
+head(statics)
 ```
+```{r}
+table(statics$Section)
+```
+
 
 
 ## Visualization
@@ -303,7 +298,7 @@ viz_OutcomesByStudentCreditLoad2 <- function(statics, sis_no_acad_plan) {
          y = "Course Grade (Percent)", 
          x = "", 
          color = "Credit Load",
-         subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
+         #subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
          caption = "Note: This dataset excludes students who withdrew or had an incomplete term") +
     scale_fill_manual(values = c("#009DD9", "#999999")) +
     theme(legend.position = "") +
@@ -367,6 +362,9 @@ v
 v <- viz_CourseItemGradeDistributions(grades)
 v
 ```
+
+
+# ******
 
 ## Bb Activity by Group
 
