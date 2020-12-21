@@ -261,14 +261,14 @@ viz_CourseItemGradeDistributions <- function(grades) {
     scale_fill_manual(values = c("#003f5c", "#58508d", "#bc5090", "#ff6361", "#ffa600")) +
     scale_color_manual(values = c("#003f5c", "#58508d", "#bc5090", "#ff6361", "#ffa600")) +
     scale_y_discrete(limits = rev(levels(as.factor(courseItemStudentSummary$CourseItem_trimmed)))) +
-    theme(legend.position = "none",
+    theme(legend.position = "bottom",
           legend.box = "vertical",
           legend.title = element_blank(),
           axis.text.y = element_text(size = 11),
           axis.title.y = element_blank(),
           axis.title.x = element_text(size = 16, color = "gray50", vjust = 0)) +
     guides(fill=guide_legend(nrow=2, byrow = TRUE)) + 
-    scale_x_continuous(limits = c(25, 100))
+    scale_x_continuous(limits = c(60, 100))
 }
 
 
