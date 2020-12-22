@@ -425,6 +425,7 @@ v
 
 ```{r}
 v <- viz_Activity_CharactersByFirstGen(statics, sis_no_acad_plan)
+v
 ```
 
 
