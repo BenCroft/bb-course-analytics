@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 # REQUIRED PARAMETERS
-course <- '1209_ACCT_205'
+course <- '1209_BIOL_227'
 course_directory <- paste0("/Users/bencroft/", course, '/input/')
 
 # OPTIONAL PARAMETERS:
@@ -84,6 +84,9 @@ submissions <- submissions_input
 sis_acad_plan <- sis_input
 sis_no_acad_plan <- sis_input
 ```
+
+
+
 
 ## Process data
 
@@ -268,8 +271,16 @@ sis_no_acad_plan <- sis_no_acad_plan %>%
 
 ## *******************************
 
+```{r}
+statics
+```
 
 
+```{r}
+ggplot(statics, aes(NormalizedScore)) +
+  geom_boxplot()
+  
+```
 
 
 ## Visualization
