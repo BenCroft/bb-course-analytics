@@ -398,7 +398,8 @@ viz_Activity_HoursByFirstGen <- function(statics, sis_no_acad_plan) {
     coord_flip() +
     xlab("") + 
     ylab("Time Spent in Blackboard (Hours)") +
-    scale_x_discrete(limits = rev(levels(tmp$FirstGen)))
+    scale_x_discrete(limits = rev(levels(tmp$FirstGen))) +
+    scale_fill_manual(values = c("#173F5F", "#3CAEA3", "#ED553B"))
 }
 
 
@@ -417,7 +418,8 @@ viz_Activity_LoginsByFirstGen <- function(statics, sis_no_acad_plan) {
     coord_flip() +
     xlab("") + 
     ylab("Number of Logins") +
-    scale_x_discrete(limits = rev(levels(tmp$FirstGen)))
+    scale_x_discrete(limits = rev(levels(tmp$FirstGen))) +
+    scale_fill_manual(values = c("#173F5F", "#3CAEA3", "#ED553B"))
 }
 
 
@@ -435,7 +437,8 @@ viz_Activity_CharactersByFirstGen <- function(statics, sis_no_acad_plan) {
     coord_flip() +
     xlab("") + 
     ylab("ForumPostCharacters") +
-    scale_x_discrete(limits = rev(levels(tmp$FirstGen)))
+    scale_x_discrete(limits = rev(levels(tmp$FirstGen))) +
+    scale_fill_manual(values = c("#173F5F", "#3CAEA3", "#ED553B"))
 }
 
 
