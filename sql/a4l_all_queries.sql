@@ -22,7 +22,6 @@ DECLARE
 	@BatchUID2 VARCHAR(4000) = '1199-70615BIOL227DEI176536BIOL227DE0176535BI716982'
 
 
-
 /* ***************************************** */
 /* STEP 3 */
 /*Find and replace 
