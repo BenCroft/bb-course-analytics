@@ -1,4 +1,8 @@
-/* Query 1: Get CourseIDs */
+
+/* ***************************************** */
+/* STEP 1 */
+/* Query 1: Get Course Batch IDs */
+
 SELECT CourseKey, Description, SubjectCode, CourseNumber, Section, 
 InstructionMethod, SectionStatus, CourseType, BatchUID 
 FROM Final.DimCourse
@@ -7,23 +11,30 @@ AND InstructionMethod = 'Online'
 AND CourseType = 'Lecture'
 
 
-
+/* ***************************************** */
+/* STEP 2 */
 /* Set global environment variables */
+
 DECLARE
 	@myTermDescription VARCHAR(4000) = 'Fall 2019',
 	@myTermSourceKey VARCHAR(4000) = '1199',
 	@BatchUID1 VARCHAR(4000) = '1199-70663BIOL2274002',
 	@BatchUID2 VARCHAR(4000) = '1199-70615BIOL227DEI176536BIOL227DE0176535BI716982'
 
+
+
+/* ***************************************** */
+/* STEP 3 */
 /*Find and replace 
 'BatchUID_List' with ('1199-70663BIOL2274002', '1199-70615BIOL227DEI176536BIOL227DE0176535BI716982')
 */
 
 
 
-
 /* ***************************************** */
+/* STEP 4 */
 /* Query 2: Dynamics*/
+
 SELECT	dt.Description AS Term, dc.CourseNumber, dc.Section, dc.UniqueDescription AS CourseDescription, di.UniqueDescription AS Instructor, ddot.DayOfTermKey,
 		ddot.WeekLevel, dd.DayNameOfWeek, dd.DateName, dd.FullDate, fca.TimeBandKey, dtb.Description24Hour AS TimeDescription24, dtb.RollupDescription AS TimeDescriptionRollup,
 		du.UniqueDescription AS StudentName, 
