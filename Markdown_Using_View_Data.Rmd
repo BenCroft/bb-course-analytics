@@ -1,0 +1,567 @@
+
+# Setup
+
+## Set new parameters for reproducible pipeline
+
+```{r}
+# REQUIRED PARAMETERS
+course <- '1209_BIOL_227'
+course_directory <- paste0("/Users/bencroft/Google Drive/BIOL/", course, "/")
+
+# OPTIONAL PARAMETERS:
+
+# Option 1: Combine two course sections
+#course1_directory <- 
+#course2_directory <- 
+#course_combined_directory <- 
+#course1_section_number <- 
+#course2_section_number <- 
+```
+
+## Load libraries
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(data.table)
+library(scales)
+library(stringr)
+library(ggrepel)
+library(ggridges)
+library(ggpmisc)
+library(kableExtra)
+```
+
+## Load helper scripts (functions)
+
+```{r}
+source("./scripts/wrangling.R")
+source("./scripts/visualizer.R")
+source("./scripts/section_combiner.R")
+```
+
+## Load data
+
+```{r}
+course_activity <- read.csv(paste0(course_directory, "course_activity.csv"))
+course_item_activity <- read.csv(paste0(course_directory, "course_item_activity.csv"))
+course_summary <- read.csv(paste0(course_directory, "course_summary.csv"))
+forum_submissions <- read.csv(paste0(course_directory, "forum_submissions.csv"))
+grade_center <- read.csv(paste0(course_directory, "grade_center.csv"))
+main <- read.csv(paste0(course_directory, "main.csv"))
+student_course_summary <- read.csv(paste0(course_directory, "student_course_summary.csv"))
+
+#prereq <- readr::read_csv(paste0(course_directory, "prerequisites.csv"))
+```
+
+# Viz
+
+## Outcomes
+
+### Outcomes by Section
+
+#### Bar plot
+
+```{r, fig.width = 13, fig.height = 8}
+tmp <- student_course_summary %>%
+  filter(IsEnrolledSIS == 1) %>%
+  filter(NormalizedScore > 0) %>%
+  filter(!SISGradeLetter %in% c("W", "CW", "I")) %>%
+  filter(CourseRole == "Student") %>%
+  filter(Course != "Fa20 - BIOL 227 - Honors LECTURE Human Anatomy & Physiology I") %>%
+  left_join(main, by = c("Course" = "COURSE_NAME")) %>%
+  mutate(Section = as.character(Section)) %>%
+  select(Term, CourseNumber, Section, UniqueDescription, InstructionMethod.x, Instructor, Student, NormalizedScore, SISClassLevel) %>%
+  mutate(InstructorLast = word(Instructor, 1)) %>%
+  mutate(CourseNumberSectionInstructor = paste0(CourseNumber, " ", Section, " ", InstructorLast)) %>%
+  mutate(CourseNumberSectionInstructor = gsub(",", "", CourseNumberSectionInstructor)) %>%
+  arrange(Student)
+
+tmp$SISClassLevel <- factor(tmp$SISClassLevel, levels = c("Freshman", "Sophomore", "Junior", "Senior", "Post-Bacc Undergraduate", "Graduate", "No SIS Match"))
+  
+tmp %>%
+  group_by(Student) %>%
+  summarise(C = n()) %>%
+  arrange(desc(C))
+
+tmp
+
+# Create plot
+tmp %>%
+  ggplot(aes(y = NormalizedScore, x = Section)) +
+  geom_boxplot(aes(fill = Section)) +
+  geom_jitter(width = 0.10) +
+  my_theme() +
+  labs(
+    #title = "Course Outcomes by Student Credit Load", 
+       y = "Course Grade (Percent)", 
+       x = "", 
+       color = "Credit Load",
+       #subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
+       caption = "Note: This dataset excludes students who withdrew or had an incomplete term") +
+  #scale_fill_manual(values = c("#009DD9", "#999999")) +
+  theme(legend.position = "") +
+  scale_y_continuous(limits = c(0, 100)) +
+  #facet_wrap(~CourseNumberSectionInstructor) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+  theme(axis.text.x = element_blank()) +
+  theme(legend.position = "top")
+```
+
+#### Ridges
+
+```{r, fig.width = 13, fig.height = 8}
+tmp <- student_course_summary %>%
+  filter(IsEnrolledSIS == 1) %>%
+  filter(NormalizedScore > 0) %>%
+  filter(!SISGradeLetter %in% c("W", "CW", "I")) %>%
+  filter(CourseRole == "Student") %>%
+  filter(Course != "Fa20 - BIOL 227 - Honors LECTURE Human Anatomy & Physiology I") %>%
+  left_join(main, by = c("Course" = "COURSE_NAME")) %>%
+  mutate(Section = as.character(Section)) %>%
+  select(Term, CourseNumber, Section, UniqueDescription, InstructionMethod.x, Instructor, Student, NormalizedScore, SISClassLevel) %>%
+  mutate(InstructorLast = word(Instructor, 1)) %>%
+  mutate(CourseNumberSectionInstructor = paste0(CourseNumber, " ", Section, " ", InstructorLast)) %>%
+  mutate(CourseNumberSectionInstructor = gsub(",", "", CourseNumberSectionInstructor)) %>%
+  arrange(Student)
+
+tmp$SISClassLevel <- factor(tmp$SISClassLevel, levels = c("Freshman", "Sophomore", "Junior", "Senior", "Post-Bacc Undergraduate", "Graduate", "No SIS Match"))
+  
+tmp %>%
+  group_by(Student) %>%
+  summarise(C = n()) %>%
+  arrange(desc(C))
+
+tmp
+
+
+ggplot(tmp, aes(x = NormalizedScore, y = Section, fill = Section, color = Section)) +
+    geom_density_ridges(scale = 4, alpha = 0.5) +
+    
+    scale_x_continuous(expand = c(0, 0), limits = c(0, 110)) +   # for both axes to remove unneeded padding
+    #scale_y_discrete(expand = c(0, 0)) +     # will generally have to set the `expand` option
+    coord_cartesian(clip = "off") + # to avoid clipping of the very top of the top ridgeline
+    theme_ridges() +
+    scale_fill_manual(values = c("#003f5c", "#bc5090","#58508d","#ff6361", "#ffa600")) +
+    scale_color_manual(values = c("#003f5c", "#bc5090","#58508d",  "#ff6361", "#ffa600")) +
+    scale_y_discrete(limits = rev(levels(as.factor(tmp$Section)))) +
+    theme(legend.position = "bottom",
+          legend.box = "vertical",
+          legend.title = element_blank(),
+          axis.text.y = element_text(size = 11),
+          axis.text.x = element_text(size = 11),
+          axis.title.y = element_blank(),
+          axis.title.x = element_text(size = 16, color = "gray50", vjust = 0)) +
+    guides(fill=guide_legend(nrow=2, byrow = TRUE)) + 
+    scale_x_continuous(limits = c(50, 100))
+```
+
+
+### Outcomes by Major
+
+```{r, fig.height = 8, fig.width = 10}
+tmp1 <- student_course_summary %>%
+  filter(IsEnrolledSIS == 1) %>%
+  filter(NormalizedScore > 0) %>%
+  filter(!SISGradeLetter %in% c("W", "CW", "I")) %>%
+  filter(CourseRole == "Student") %>%
+  filter(Course != "Fa20 - BIOL 227 - Honors LECTURE Human Anatomy & Physiology I") %>%
+  select(SISMajor, NormalizedScore) %>%
+  group_by(SISMajor) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count)) %>%
+  filter(Count >= 5)
+
+tmp2 <- student_course_summary %>%
+  filter(IsEnrolledSIS == 1) %>%
+  filter(NormalizedScore > 0) %>%
+  filter(!SISGradeLetter %in% c("W", "CW", "I")) %>%
+  filter(CourseRole == "Student") %>%
+  filter(Course != "Fa20 - BIOL 227 - Honors LECTURE Human Anatomy & Physiology I") %>%
+  left_join(main, by = c("Course" = "COURSE_NAME")) %>%
+  mutate(Section = as.character(Section)) %>%
+  select(Term, CourseNumber, Section, UniqueDescription, InstructionMethod.x, Instructor, Student, NormalizedScore, SISMajor) %>%
+  mutate(InstructorLast = word(Instructor, 1)) %>%
+  mutate(CourseNumberSectionInstructor = paste0(CourseNumber, " ", Section, " ", InstructorLast)) %>%
+  mutate(CourseNumberSectionInstructor = gsub(",", "", CourseNumberSectionInstructor)) %>%
+  select(SISMajor, NormalizedScore) %>%
+  filter(SISMajor %in% tmp1$SISMajor)
+  # group_by(SISMajor) %>%
+  # summarise(Count = n(), 
+  #           GradePercent_Mean = mean(NormalizedScore), 
+  #           GradePercent_Median = median(NormalizedScore), 
+  #           GradePercent_SD = sd(NormalizedScore)) %>%
+  # arrange(desc(Count)) %>%
+  # filter(Count >= 5)
+
+# Create plot
+tmp2 %>%
+  ggplot(aes(y = NormalizedScore, x = SISMajor)) +
+  geom_boxplot(aes(fill = SISMajor)) +
+  geom_jitter(width = 0.10) +
+  my_theme() +
+  labs(
+    #title = "Course Outcomes by Student Credit Load", 
+       y = "Course Grade (Percent)", 
+       x = "", 
+       color = "Credit Load",
+       #subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
+       caption = "Note: This dataset excludes students who withdrew or had an incomplete term \n Plans include 5 or more (duplicated) students.") +
+  #scale_fill_manual(values = c("#009DD9", "#999999")) +
+  theme(legend.position = "") +
+  scale_y_continuous(limits = c(0, 100)) +
+  #facet_wrap(~CourseNumberSectionInstructor) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+  theme(axis.text.x = element_blank()) +
+  theme(legend.position = "left")
+```
+
+
+
+### Outcomes by Class Level
+
+```{r, fig.width = 13, fig.height = 8}
+tmp <- student_course_summary %>%
+  filter(IsEnrolledSIS == 1) %>%
+  filter(NormalizedScore > 0) %>%
+  filter(!SISGradeLetter %in% c("W", "CW", "I")) %>%
+  filter(CourseRole == "Student") %>%
+  filter(Course != "Fa20 - BIOL 227 - Honors LECTURE Human Anatomy & Physiology I") %>%
+  left_join(main, by = c("Course" = "COURSE_NAME")) %>%
+  mutate(Section = as.character(Section)) %>%
+  select(Term, CourseNumber, Section, UniqueDescription, InstructionMethod.x, Instructor, Student, NormalizedScore, SISClassLevel) %>%
+  mutate(InstructorLast = word(Instructor, 1)) %>%
+  mutate(CourseNumberSectionInstructor = paste0(CourseNumber, " ", Section, " ", InstructorLast)) %>%
+  mutate(CourseNumberSectionInstructor = gsub(",", "", CourseNumberSectionInstructor)) %>%
+  arrange(Student)
+
+tmp$SISClassLevel <- factor(tmp$SISClassLevel, levels = c("Freshman", "Sophomore", "Junior", "Senior", "Post-Bacc Undergraduate", "Graduate", "No SIS Match"))
+  
+tmp %>%
+  group_by(Student) %>%
+  summarise(C = n()) %>%
+  arrange(desc(C))
+
+tmp
+
+# Create plot
+tmp %>%
+  ggplot(aes(y = NormalizedScore, x = SISClassLevel)) +
+  geom_boxplot(aes(fill = SISClassLevel)) +
+  geom_jitter(width = 0.10) +
+  my_theme() +
+  labs(
+    #title = "Course Outcomes by Student Credit Load", 
+       y = "Course Grade (Percent)", 
+       x = "", 
+       color = "Credit Load",
+       #subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
+       caption = "Note: This dataset excludes students who withdrew or had an incomplete term") +
+  #scale_fill_manual(values = c("#009DD9", "#999999")) +
+  theme(legend.position = "") +
+  scale_y_continuous(limits = c(0, 100)) +
+  facet_wrap(~CourseNumberSectionInstructor) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+  theme(axis.text.x = element_blank()) +
+  theme(legend.position = "top")
+```
+
+
+## Items
+
+
+### Top 5 Average Item Grade Distributions by Section
+
+```{r, fig.width = 13, fig.height = 8}
+tmp <- grade_center %>%
+  filter(StudentEnrollmentStatus == "Enrolled") %>%
+  #filter(NormalizedScore > 0) %>%
+  #filter(!SISGradeLetter %in% c("W", "CW", "I")) %>%
+  filter(CourseRole == "Student") %>%
+  filter(Course != "Fa20 - BIOL 227 - Honors LECTURE Human Anatomy & Physiology I") %>%
+  left_join(main, by = c("Course" = "COURSE_NAME")) %>%
+  mutate(Section = as.character(Section)) %>%
+  mutate(CourseItem = ifelse(nchar(as.character(CourseItem)) > 13, paste0(strtrim(as.character(CourseItem), 25), '...'), as.character(CourseItem))) %>%
+  group_by(Section, CourseItem) %>%
+  summarise(AvgScore = mean(AdjustedGrade)) %>%
+  filter(AvgScore > 0) %>%
+  arrange(Section, desc(AvgScore)) %>%
+  group_by(Section) %>%
+  slice_head(n = 5) %>%
+  ungroup() %>%
+  ungroup()
+
+tmp
+
+tmp$CourseItem <- factor(tmp$CourseItem, levels <- unique(tmp$CourseItem[order(tmp$Section)]))
+
+ggplot(tmp, aes(y = CourseItem, x = AvgScore)) + 
+  geom_bar(stat = "identity", aes(fill = Section)) +
+  my_theme() +
+  theme(axis.text.y = element_text(size = 11),
+        legend.title = element_blank(),
+        legend.position = "") +
+  #scale_x_continuous(limits = c(80, 100)) +
+  facet_wrap(~Section)
+```
+
+### Bottom 5 Average Item Grade Distributions by Section
+
+```{r, fig.width = 13, fig.height = 8}
+tmp <- grade_center %>%
+  filter(StudentEnrollmentStatus == "Enrolled") %>%
+  #filter(NormalizedScore > 0) %>%
+  #filter(!SISGradeLetter %in% c("W", "CW", "I")) %>%
+  filter(CourseRole == "Student") %>%
+  filter(Course != "Fa20 - BIOL 227 - Honors LECTURE Human Anatomy & Physiology I") %>%
+  left_join(main, by = c("Course" = "COURSE_NAME")) %>%
+  mutate(Section = as.character(Section)) %>%
+  mutate(CourseItem = ifelse(nchar(as.character(CourseItem)) > 13, paste0(strtrim(as.character(CourseItem), 25), '...'), as.character(CourseItem))) %>%
+  group_by(Section, CourseItem) %>%
+  filter(AdjustedGrade >= 0) %>%
+  summarise(AvgScore = mean(AdjustedGrade)) %>%
+  filter(AvgScore > 0) %>%
+  arrange(Section, AvgScore) %>%
+  group_by(Section) %>%
+  slice_head(n = 5)
+
+tmp
+
+tmp$CourseItem <- factor(tmp$CourseItem, levels <- unique(tmp$CourseItem[order(tmp$Section)]))
+
+ggplot(tmp, aes(y = CourseItem, x = AvgScore)) + 
+  geom_bar(stat = "identity", aes(fill = Section)) +
+  my_theme() +
+  theme(axis.text.y = element_text(size = 11),
+        legend.title = element_blank(),
+        legend.position = "") +
+  #scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12)) +
+  facet_wrap(~Section)
+```
+
+
+### Top 5 Item Grade Variability by Section
+
+```{r, fig.width = 13, fig.height = 8}
+tmp <- grade_center %>%
+  filter(StudentEnrollmentStatus == "Enrolled") %>%
+  #filter(NormalizedScore > 0) %>%
+  #filter(!SISGradeLetter %in% c("W", "CW", "I")) %>%
+  filter(CourseRole == "Student") %>%
+  filter(Course != "Fa20 - BIOL 227 - Honors LECTURE Human Anatomy & Physiology I") %>%
+  left_join(main, by = c("Course" = "COURSE_NAME")) %>%
+  mutate(Section = as.character(Section)) %>%
+  mutate(CourseItem = ifelse(nchar(as.character(CourseItem)) > 13, paste0(strtrim(as.character(CourseItem), 25), '...'), as.character(CourseItem))) %>%
+  group_by(Section, CourseItem) %>%
+  filter(AdjustedGrade >= 0) %>%
+  summarise(SdScore = sd(AdjustedGrade)) %>%
+  filter(SdScore > 0) %>%
+  arrange(Section, desc(SdScore)) %>%
+  group_by(Section) %>%
+  slice_head(n = 5)
+
+tmp
+
+tmp$CourseItem <- factor(tmp$CourseItem, levels <- unique(tmp$CourseItem[order(tmp$Section)]))
+
+ggplot(tmp, aes(y = CourseItem, x = SdScore)) + 
+  geom_bar(stat = "identity", aes(fill = Section)) +
+  my_theme() +
+  theme(axis.text.y = element_text(size = 11),
+        legend.title = element_blank(),
+        legend.position = "") +
+  #scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12)) +
+  facet_wrap(~Section)
+```
+
+
+### Bottom 5 Item Grade Variability by Section
+
+```{r, fig.width = 13, fig.height = 8}
+tmp <- grade_center %>%
+  filter(StudentEnrollmentStatus == "Enrolled") %>%
+  #filter(NormalizedScore > 0) %>%
+  #filter(!SISGradeLetter %in% c("W", "CW", "I")) %>%
+  filter(CourseRole == "Student") %>%
+  filter(Course != "Fa20 - BIOL 227 - Honors LECTURE Human Anatomy & Physiology I") %>%
+  left_join(main, by = c("Course" = "COURSE_NAME")) %>%
+  mutate(Section = as.character(Section)) %>%
+  mutate(CourseItem = ifelse(nchar(as.character(CourseItem)) > 13, paste0(strtrim(as.character(CourseItem), 25), '...'), as.character(CourseItem))) %>%
+  group_by(Section, CourseItem) %>%
+  filter(AdjustedGrade >= 0) %>%
+  summarise(SdScore = sd(AdjustedGrade)) %>%
+  filter(SdScore > 0) %>%
+  arrange(Section, SdScore) %>%
+  group_by(Section) %>%
+  slice_head(n = 5)
+
+tmp
+
+tmp$CourseItem <- factor(tmp$CourseItem, levels <- unique(tmp$CourseItem[order(tmp$Section)]))
+
+ggplot(tmp, aes(y = CourseItem, x = SdScore)) + 
+  geom_bar(stat = "identity", aes(fill = Section)) +
+  my_theme() +
+  theme(axis.text.y = element_text(size = 11),
+        legend.title = element_blank(),
+        legend.position = "") +
+  #scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12)) +
+  facet_wrap(~Section)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Item Activity
+
+### Top 5 Item Mins by Section
+
+```{r, fig.width = 10, fig.height = 10}
+tmp <- course_item_activity %>% 
+  #filter(IsEnrolledSIS == 1) %>%
+  #filter(NormalizedScore > 0) %>%
+  filter(!SISGradeLetter %in% c("W", "CW", "I")) %>%
+  filter(CourseRole == "Student") %>%
+  filter(Course != "Fa20 - BIOL 227 - Honors LECTURE Human Anatomy & Physiology I") %>%
+  left_join(main, by = c("Course" = "COURSE_ID")) %>%
+  mutate(Section = as.character(Section)) %>%
+  mutate(CourseItem = ifelse(nchar(as.character(CourseItem)) > 13, paste0(strtrim(as.character(CourseItem), 25), '...'), as.character(CourseItem))) %>%
+  group_by(CourseNumber, Section, CourseItem) %>%
+  summarise(AvgMin = round(mean(CourseItemMinutes), 1),
+            AvgAccesses = round(mean(CourseItemAccesses), 1),
+            AvgInteractions = round(mean(CourseItemInteractions), 1)) %>%
+  group_by(Section) %>%
+  arrange(desc(AvgMin)) %>%
+  slice_head(n = 5)
+  
+  
+tmp
+
+tmp$CourseItem <- factor(tmp$CourseItem, levels <- unique(tmp$CourseItem[order(tmp$Section)]))
+
+ggplot(tmp, aes(y = CourseItem, x = AvgMin)) + 
+  geom_bar(stat = "identity", aes(fill = Section)) +
+  my_theme() +
+  theme(axis.text.y = element_text(size = 11),
+        legend.title = element_blank(),
+        legend.position = "") +
+  #scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12)) +
+  facet_wrap(~Section)
+```
+
+### Top 5 Item Interactions by Section
+
+```{r, fig.width = 10, fig.height = 10}
+tmp <- course_item_activity %>% 
+  #filter(IsEnrolledSIS == 1) %>%
+  #filter(NormalizedScore > 0) %>%
+  filter(!SISGradeLetter %in% c("W", "CW", "I")) %>%
+  filter(CourseRole == "Student") %>%
+  filter(Course != "Fa20 - BIOL 227 - Honors LECTURE Human Anatomy & Physiology I") %>%
+  left_join(main, by = c("Course" = "COURSE_ID")) %>%
+  mutate(Section = as.character(Section)) %>%
+  mutate(CourseItem = ifelse(nchar(as.character(CourseItem)) > 13, paste0(strtrim(as.character(CourseItem), 25), '...'), as.character(CourseItem))) %>%
+  group_by(CourseNumber, Section, CourseItem) %>%
+  summarise(AvgMin = round(mean(CourseItemMinutes), 1),
+            AvgAccesses = round(mean(CourseItemAccesses), 1),
+            AvgInteractions = round(mean(CourseItemInteractions), 1)) %>%
+  group_by(Section) %>%
+  arrange(desc(AvgInteractions)) %>%
+  slice_head(n = 5) %>%
+  mutate(Section = as.character(Section)) %>%
+  arrange(Section)
+  
+tmp 
+
+#list_of_sections <- as.vector(sort(unique(tmp$Section)))
+tmp$CourseItem <- factor(tmp$CourseItem, levels <- unique(tmp$CourseItem[order(tmp$Section)]))
+
+ggplot(tmp, aes(y = CourseItem, x = AvgInteractions)) + 
+  geom_bar(stat = "identity", aes(fill = Section)) +
+  my_theme() +
+  theme(axis.text.y = element_text(size = 11),
+        legend.title = element_blank(),
+        legend.position = "") +
+  #scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12)) +
+  facet_wrap(~Section)
+```
+
+
+
+## Course Activity
+
+### Time Spent by Grade Letter
+
+
+```{r, fig.width = 13, fig.height = 8}
+# tmp <- student_course_summary %>%
+#   filter(IsEnrolledSIS == 1) %>%
+#   filter(NormalizedScore > 0) %>%
+#   filter(!SISGradeLetter %in% c("W", "CW", "I")) %>%
+#   filter(CourseRole == "Student") %>%
+#   filter(Course != "Fa20 - BIOL 227 - Honors LECTURE Human Anatomy & Physiology I") %>%
+#   left_join(main, by = c("Course" = "COURSE_NAME")) %>%
+#   mutate(Section = as.character(Section)) %>%
+#   select(Term, CourseNumber, Section, UniqueDescription, InstructionMethod.x, Instructor, Student, NormalizedScore, SISGradeLetter, CourseAccessMinutes) %>%
+#   mutate(InstructorLast = word(Instructor, 1)) %>%
+#   mutate(CourseNumberSectionInstructor = paste0(CourseNumber, " ", Section, " ", InstructorLast)) %>%
+#   mutate(CourseNumberSectionInstructor = gsub(",", "", CourseNumberSectionInstructor)) %>%
+#   arrange(Student)
+# 
+# tmp$SISGradeLetter <- factor(tmp$SISGradeLetter, levels = c("A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F", "P"))
+#   
+# tmp %>%
+#   group_by(Student) %>%
+#   summarise(C = n()) %>%
+#   arrange(desc(C))
+# 
+# tmp
+# 
+# # Create plot
+# tmp %>%
+#   ggplot(aes(y = CourseAccessMinutes, x = SISGradeLetter)) +
+#   geom_boxplot(aes(fill = SISGradeLetter)) +
+#   geom_jitter(width = 0.10) +
+#   my_theme() +
+#   labs(
+#     #title = "Course Outcomes by Student Credit Load", 
+#        y = "Course Grade (Percent)", 
+#        x = "", 
+#        color = "Credit Load",
+#        #subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
+#        caption = "Note: This dataset excludes students who withdrew or had an incomplete term") +
+#   #scale_fill_manual(values = c("#009DD9", "#999999")) +
+#   theme(legend.position = "") +
+#   scale_y_continuous(limits = c(0, 100)) +
+#   facet_wrap(~CourseNumberSectionInstructor) +
+#   theme(axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+#   theme(axis.text.x = element_blank()) +
+#   theme(legend.position = "top")
+```
+
+
+
