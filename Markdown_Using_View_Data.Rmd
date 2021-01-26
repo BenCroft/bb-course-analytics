@@ -61,13 +61,15 @@ sis_input <- read.csv(paste0(course_directory, "sis.csv"))
 #prereq_input <- readr::read_csv(paste0(course_directory, "prerequisites.csv"))
 ```
 
+
 # Clean Data
 
 ## Change data types
 
 ```{r}
 sis_input <- sis_input %>%
-  mutate(StudentID = as.character(StudentID))
+  mutate(StudentID = as.character(StudentID)) %>%
+  mutate(AcademicPlan = as.character(AcademicPlan))
 ```
 
 
@@ -165,16 +167,19 @@ sis <- sis %>%
   select(-StudentID, -EmployeeID)
 ```
 
-## Remove Academic Subplan
+## Process Academic Plan data
+
+### Remove Academic Subplan
 
 ```{r}
 sis <- sis %>%
-  select(-AcademicSubPlan)
+  select(-AcademicSubPlan) %>%
+  distinct()
 ```
 
-## One Hot Encode - Acad Plan
+### One Hot Encode - Acad Plan
 
-### Get plans with more than 10 students
+#### Get plans with more than 10 students
 
 ```{r paged.print=TRUE}
 plan_counts <- sis %>%
@@ -186,48 +191,37 @@ plan_counts <- sis %>%
   ungroup() %>%
   group_by(AcademicPlan) %>%
   summarise(StudentsWithPlan = sum(Count)) %>%
-  arrange(desc(StudentsWithPlan))
+  arrange(desc(StudentsWithPlan)) %>%
+  ungroup()
 plan_counts
 
 plans_10_or_more <- plan_counts %>%
-  filter(StudentsWithPlan >= 10)
+  filter(StudentsWithPlan >= 10) %>%
+  mutate(AcademicPlan = as.character(AcademicPlan))
 plans_10_or_more
 ```
 
-### Create new Academic Plan variable that wraps plans with n < 10 into a "low plan count" plan name
+#### Create new Academic Plan variable that wraps plans with n < 10 into a "low plan count" plan name
 
 ```{r}
 sis2 <- sis %>%
-  mutate(AcademicPlanWith10 = ifelse(AcademicPlan %in% plans_10_or_more$AcademicPlan, AcademicPlan, "Plan with low student count")) %>%
-  select(-AcademicPlan) %>%
-  distinct()
-
-#sis2 <- cbind(sis2, dummies::dummy(sis2$AcademicPlan, sep = "_"))
-
-sis2
+  mutate(Plan10 = ifelse(AcademicPlan %in% plans_10_or_more$AcademicPlan, AcademicPlan, "Plan w low count")) %>%
+  select(Plan10, StudentID_Anon, everything()) %>%
+  arrange(StudentID_Anon) 
 ```
+
+#### Drop regular Academic Plan in favor of new plan (to spread the new variable, limiting new cols to plans with 10 or less)
 
 ```{r}
-mydf = data.frame(x=rep(letters[1:9]),
-               day=c("Mon","Tues","Wed","Thurs","Fri","Sat","Sun","Fri","Mon"))
-
-mydf
+sis2 <- sis2 %>%
+  select(-AcademicPlan)
 ```
 
-
-### 
-
-```{r}
-sis2 <- sis %>%
-  select(-AcademicSubPlan)
-
-reshape2::dcast(sis2,)
-
-```
+#### Spread the new Academic Plan so each student is on 1 row
 
 ```{r}
 sis2 %>%
-  group_by(TermSourceKey, ClassNumberUniqueDescription, StudentID_Anon) %>%
+  group_by(StudentID_Anon) %>%
   summarise(C = n()) %>%
   arrange(desc(C))
 ```
@@ -237,22 +231,49 @@ sis2 %>%
   filter(StudentID_Anon == 61612)
 ```
 
+#### Create plan dummies
+
+```{r}
+sis3 <- data.frame(cbind(sis2, dummies::dummy(sis2$Plan10))) # Append dummies for Academic Plan
+```
+
+#### Remove Plan column and collapse duplicates
+
+```{r message=FALSE}
+columns_for_group <- sis2 %>%
+  select(-Plan10)
+grp_cols <- names(columns_for_group)
+grp_cols
+
+sis4 <- sis3 %>%
+  group_by(.dots = grp_cols) %>%
+  summarise(across(starts_with("Plan10."), max)) %>%
+  ungroup()
+```
+
+```{r}
+names(sis4)
+```
+
+
+#### Test to see if there are student-term duplicates
+
+```{r}
+sis4 %>%
+  group_by(TermSourceKey, ClassNumberUniqueDescription, StudentID_Anon) %>%
+  summarise(C = n()) %>%
+  arrange(desc(C))
+```
+
 
 ## Add BISQL to A4L data
 
 ```{r}
-course_activity <- left
-  select(-StudentID, -UserName)
-course_item_activityt <- course_item_activity %>%
-  select(-StudentID, -UserName)
-forum_submissions <- forum_submissions %>%
-  select(-StudentID, -UserName)
-grade_center <- grade_center %>%
-  select(-StudentID)
-student_course_summary <- student_course_summary %>%
-  select(-StudentID)
-sis <- sis %>%
-  select(-StudentID, -EmployeeID)
+course_activity_sis <- left_join(course_activity, sis4, by = "StudentID_Anon")
+course_item_activity_sis <- left_join(course_item_activity, sis4, by = "StudentID_Anon")
+forum_submissions_sis <- left_join(forum_submissions, sis4, by = "StudentID_Anon")
+grade_center_sis <- left_join(grade_center, sis4, by = "StudentID_Anon")
+student_course_summary_sis <- left_join(student_course_summary, sis4, by = "StudentID_Anon")
 ```
 
 
@@ -278,6 +299,10 @@ sis <- sis %>%
 
 
 
+
+
+
+# ********************
 
  # ***************
  
