@@ -1,6 +1,15 @@
 
 # Setup
 
+## Helper scripts
+
+```{r}
+source("./scripts/wrangling.R")
+source("./scripts/visualizer.R")
+source("./scripts/section_combiner.R")
+```
+
+
 ## Set new parameters for reproducible pipeline
 
 ```{r}
@@ -8,9 +17,8 @@
 #course <- '1209_BIOL_227'
 #course_directory <- paste0("/Users/bencroft/Google Drive/BIOL/", course, "/")
 
-course <- 'FA19 BIOL 227'
-course_directory <- paste0("/Users/bencroft/", course, "/")
-
+course <- 'BIOL_227_1209'
+course_directory <- paste0("/Users/bencroft/Data/", course, "/")
 
 # OPTIONAL PARAMETERS:
 
@@ -35,33 +43,216 @@ library(ggrepel)
 library(ggridges)
 library(ggpmisc)
 library(kableExtra)
-```
-
-## Load helper scripts (functions)
-
-```{r}
-source("./scripts/wrangling.R")
-source("./scripts/visualizer.R")
-source("./scripts/section_combiner.R")
+library(tidyr)
+library(fastDummies)
 ```
 
 ## Load data
 
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
-course_activity <- read.csv(paste0(course_directory, "course_activity.csv"))
-course_item_activity <- read.csv(paste0(course_directory, "course_item_activity.csv"))
-course_summary <- read.csv(paste0(course_directory, "course_summary.csv"))
-forum_submissions <- read.csv(paste0(course_directory, "forum_submissions.csv"))
-grade_center <- read.csv(paste0(course_directory, "grade_center.csv"))
-main <- read.csv(paste0(course_directory, "a4l_main.csv"))
-student_course_summary <- read.csv(paste0(course_directory, "student_course_summary.csv"))
-sis <- read.csv(paste0(course_directory, "sis.csv"))
-prereq <- readr::read_csv(paste0(course_directory, "prerequisites.csv"))
+course_activity_input <- read.csv(paste0(course_directory, "course_activity.csv"))
+course_item_activity_input <- read.csv(paste0(course_directory, "course_item_activity.csv"))
+course_summary_input <- read.csv(paste0(course_directory, "course_summary.csv"))
+forum_submissions_input <- read.csv(paste0(course_directory, "forum_submissions.csv"))
+grade_center_input <- read.csv(paste0(course_directory, "grade_center.csv"))
+student_course_summary_input <- read.csv(paste0(course_directory, "student_course_summary.csv"))
+sis_input <- read.csv(paste0(course_directory, "sis.csv"))
+#main_input <- read.csv(paste0(course_directory, "a4l_main.csv"))
+#prereq_input <- readr::read_csv(paste0(course_directory, "prerequisites.csv"))
 ```
 
+# Clean Data
+
+## Change data types
 
 ```{r}
-sis
+sis_input <- sis_input %>%
+  mutate(StudentID = as.character(StudentID))
+```
+
+
+## Get Student ID
+
+```{r}
+course_activity <- course_activity_input %>%
+  mutate(StudentID = word(UserName, -1)) %>%
+  mutate(StudentID = gsub(StudentID, pattern = "\\(", replacement = "")) %>%
+  mutate(StudentID = gsub(StudentID, pattern = "\\)", replacement = ""))
+
+course_item_activity <- course_item_activity_input %>%
+  mutate(StudentID = word(UserName, -1)) %>%
+  mutate(StudentID = gsub(StudentID, pattern = "\\(", replacement = "")) %>%
+  mutate(StudentID = gsub(StudentID, pattern = "\\)", replacement = ""))
+
+forum_submissions <- forum_submissions_input %>%
+  mutate(StudentID = word(UserName, -1)) %>%
+  mutate(StudentID = gsub(StudentID, pattern = "\\(", replacement = "")) %>%
+  mutate(StudentID = gsub(StudentID, pattern = "\\)", replacement = ""))
+
+grade_center <- grade_center_input %>%
+  mutate(StudentID = word(Student, -1)) %>%
+  mutate(StudentID = gsub(StudentID, pattern = "\\(", replacement = "")) %>%
+  mutate(StudentID = gsub(StudentID, pattern = "\\)", replacement = ""))
+
+student_course_summary <- student_course_summary_input %>%
+  mutate(StudentID = word(Student, -1)) %>%
+  mutate(StudentID = gsub(StudentID, pattern = "\\(", replacement = "")) %>%
+  mutate(StudentID = gsub(StudentID, pattern = "\\)", replacement = ""))
+
+sis <- sis_input
+```
+
+## Anonymize
+
+```{r}
+set.seed(1)
+
+student_roster <- union(course_activity$StudentID, course_item_activity$StudentID)   
+student_roster <- union(student_roster, forum_submissions$StudentID)    
+student_roster <- union(student_roster, grade_center$StudentID)    
+student_roster <- union(student_roster, student_course_summary$StudentID) 
+student_roster <- union(student_roster, sis$StudentID)
+
+# Create hash table for anonymous student ids
+student_count <- length(unique(student_roster))
+student_anon_ids <- sample(10000:99999, student_count, replace=FALSE)
+student_anon_df <- data.frame(student_roster, student_anon_ids) %>%
+  rename(StudentID = student_roster, StudentID_Anon = student_anon_ids) %>%
+  mutate(StudentID = as.character(StudentID))
+
+#sis <- sis %>% mutate(StudentID = as.character(StudentID))
+
+course_activity <- left_join(course_activity, student_anon_df, by = c("StudentID"))
+course_item_activity <- left_join(course_item_activity, student_anon_df, by = c("StudentID"))
+forum_submissions <- left_join(forum_submissions, student_anon_df, by = c("StudentID"))
+grade_center <- left_join(grade_center, student_anon_df, by = c("StudentID"))
+student_course_summary <- left_join(student_course_summary, student_anon_df, by = c("StudentID"))
+sis <- left_join(sis, student_anon_df, by = c("StudentID"))
+
+# VALIDATE
+sym_diff <- function(a,b) setdiff(union(a,b), intersect(a,b))
+
+sis$StudentID_Anon %in% student_anon_df$StudentID_Anon
+course_item_activity$StudentID_Anon %in% sis$StudentID_Anon
+```
+
+## Filter roles
+
+```{r}
+course_activity <- course_activity %>%
+  filter(CourseRole == "Student")
+course_item_activity <- course_item_activity %>%
+  filter(CourseRole == "Student")
+forum_submissions <- forum_submissions %>%
+  filter(CourseRole == "Student")
+```
+
+
+## Remove PII
+
+```{r}
+course_activity <- course_activity %>%
+  select(-StudentID, -UserName)
+course_item_activityt <- course_item_activity %>%
+  select(-StudentID, -UserName)
+forum_submissions <- forum_submissions %>%
+  select(-StudentID, -UserName)
+grade_center <- grade_center %>%
+  select(-StudentID)
+student_course_summary <- student_course_summary %>%
+  select(-StudentID)
+sis <- sis %>%
+  select(-StudentID, -EmployeeID)
+```
+
+## Remove Academic Subplan
+
+```{r}
+sis <- sis %>%
+  select(-AcademicSubPlan)
+```
+
+## One Hot Encode - Acad Plan
+
+### Get plans with more than 10 students
+
+```{r paged.print=TRUE}
+plan_counts <- sis %>%
+  select(StudentID_Anon, AcademicPlan) %>%
+  distinct() %>%
+  group_by(StudentID_Anon, AcademicPlan) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count), AcademicPlan, StudentID_Anon) %>%
+  ungroup() %>%
+  group_by(AcademicPlan) %>%
+  summarise(StudentsWithPlan = sum(Count)) %>%
+  arrange(desc(StudentsWithPlan))
+plan_counts
+
+plans_10_or_more <- plan_counts %>%
+  filter(StudentsWithPlan >= 10)
+plans_10_or_more
+```
+
+### Create new Academic Plan variable that wraps plans with n < 10 into a "low plan count" plan name
+
+```{r}
+sis2 <- sis %>%
+  mutate(AcademicPlanWith10 = ifelse(AcademicPlan %in% plans_10_or_more$AcademicPlan, AcademicPlan, "Plan with low student count")) %>%
+  select(-AcademicPlan) %>%
+  distinct()
+
+#sis2 <- cbind(sis2, dummies::dummy(sis2$AcademicPlan, sep = "_"))
+
+sis2
+```
+
+```{r}
+mydf = data.frame(x=rep(letters[1:9]),
+               day=c("Mon","Tues","Wed","Thurs","Fri","Sat","Sun","Fri","Mon"))
+
+mydf
+```
+
+
+### 
+
+```{r}
+sis2 <- sis %>%
+  select(-AcademicSubPlan)
+
+reshape2::dcast(sis2,)
+
+```
+
+```{r}
+sis2 %>%
+  group_by(TermSourceKey, ClassNumberUniqueDescription, StudentID_Anon) %>%
+  summarise(C = n()) %>%
+  arrange(desc(C))
+```
+
+```{r}
+sis2 %>%
+  filter(StudentID_Anon == 61612)
+```
+
+
+## Add BISQL to A4L data
+
+```{r}
+course_activity <- left
+  select(-StudentID, -UserName)
+course_item_activityt <- course_item_activity %>%
+  select(-StudentID, -UserName)
+forum_submissions <- forum_submissions %>%
+  select(-StudentID, -UserName)
+grade_center <- grade_center %>%
+  select(-StudentID)
+student_course_summary <- student_course_summary %>%
+  select(-StudentID)
+sis <- sis %>%
+  select(-StudentID, -EmployeeID)
 ```
 
 
@@ -69,6 +260,27 @@ sis
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ # ***************
+ 
 ```{r}
 sis %>%
   filter(Term == "Fall 2020") %>%
@@ -93,7 +305,6 @@ sis %>%
   
   filter(StudentID == 114050872)
 ```
-
 
 ```{r}
 sis %>%
@@ -326,6 +537,100 @@ tmp %>%
 
 
 ## Items
+
+
+
+
+```{r}
+dummy <- function(data, col) {
+    for(c in col) {
+        idx <- which(names(data)==c)
+        v <- data[[idx]]
+        stopifnot(class(v)=="factor")
+        m <- matrix(0, nrow=nrow(data), ncol=nlevels(v))
+        m[cbind(seq_along(v), as.integer(v))]<-1
+        colnames(m) <- paste(c, levels(v), sep="_")
+        r <- data.frame(m)
+        if ( idx>1 ) {
+            r <- cbind(data[1:(idx-1)],r)
+        }
+        if ( idx<ncol(data) ) {
+            r <- cbind(r, data[(idx+1):ncol(data)])
+        }
+        data <- r
+    }
+    data
+}
+
+
+dd <- data.frame(a=runif(30),
+    b=sample(letters[1:3],30,replace=T),
+    c=rnorm(30),
+    d=sample(letters[10:13],30,replace=T)
+)
+
+dd 
+
+dd %>% dummy("b")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+df <- data_frame(var = sample(x = letters[1:4], size = 10, replace = TRUE))
+
+df
+
+df %>% 
+  mutate(unique_row_id = 1:n()) %>% #The rows need to be unique for `spread` to work.
+  mutate(dummy = 1) %>% 
+  spread(var, dummy, fill = 0)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
