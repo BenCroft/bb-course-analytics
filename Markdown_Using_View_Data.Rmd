@@ -33,7 +33,7 @@ course_directory <- paste0("/Users/bencroft/Data/", course, "/")
 ## Load libraries
 
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
-library(dplyr)
+
 library(ggplot2)
 library(lubridate)
 library(data.table)
@@ -45,18 +45,19 @@ library(ggpmisc)
 library(kableExtra)
 library(tidyr)
 library(fastDummies)
+library(dplyr)
 ```
 
 ## Load data
 
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
-course_activity_input <- read.csv(paste0(course_directory, "course_activity.csv"))
-course_item_activity_input <- read.csv(paste0(course_directory, "course_item_activity.csv"))
-course_summary_input <- read.csv(paste0(course_directory, "course_summary.csv"))
-forum_submissions_input <- read.csv(paste0(course_directory, "forum_submissions.csv"))
-grade_center_input <- read.csv(paste0(course_directory, "grade_center.csv"))
-student_course_summary_input <- read.csv(paste0(course_directory, "student_course_summary.csv"))
-sis_input <- read.csv(paste0(course_directory, "sis.csv"))
+course_activity_input <- read.csv(paste0(course_directory, "course_activity.csv"), stringsAsFactors = FALSE)
+course_item_activity_input <- read.csv(paste0(course_directory, "course_item_activity.csv"), stringsAsFactors = FALSE)
+course_summary_input <- read.csv(paste0(course_directory, "course_summary.csv"), stringsAsFactors = FALSE)
+forum_submissions_input <- read.csv(paste0(course_directory, "forum_submissions.csv"), stringsAsFactors = FALSE)
+grade_center_input <- read.csv(paste0(course_directory, "grade_center.csv"), stringsAsFactors = FALSE)
+student_course_summary_input <- read.csv(paste0(course_directory, "student_course_summary.csv"), stringsAsFactors = FALSE)
+sis_input <- read.csv(paste0(course_directory, "sis.csv"), stringsAsFactors = FALSE)
 #main_input <- read.csv(paste0(course_directory, "a4l_main.csv"))
 #prereq_input <- readr::read_csv(paste0(course_directory, "prerequisites.csv"))
 ```
@@ -71,6 +72,32 @@ sis_input <- sis_input %>%
   mutate(StudentID = as.character(StudentID)) %>%
   mutate(AcademicPlan = as.character(AcademicPlan))
 ```
+
+## Add grade order
+
+```{r}
+sis_input <- sis_input %>%
+  mutate(GradeOrder = case_when(GradeLetter == "P" ~ 00,
+                                 GradeLetter == "A+" ~ 01,
+                                 GradeLetter == "A" ~ 02,
+                                 GradeLetter == "A-" ~ 03,
+                                 GradeLetter == "B+" ~ 04,
+                                 GradeLetter == "B" ~ 05,
+                                 GradeLetter == "B-" ~ 06,
+                                 GradeLetter == "C+" ~ 07,
+                                 GradeLetter == "C" ~ 08,
+                                 GradeLetter == "C-" ~ 09,
+                                 GradeLetter == "D+" ~ 10,
+                                 GradeLetter == "D" ~ 11,
+                                 GradeLetter == "D-" ~ 12,
+                                 GradeLetter == "F" ~ 13,
+                                 GradeLetter == "W" ~ 14,
+                                 GradeLetter == "CW" ~ 15,
+                                 GradeLetter == "I" ~ 16
+                                 ))
+```
+
+
 
 
 ## Get Student ID
@@ -103,6 +130,9 @@ student_course_summary <- student_course_summary_input %>%
 
 sis <- sis_input
 ```
+
+
+
 
 ## Anonymize
 
@@ -138,6 +168,7 @@ sis$StudentID_Anon %in% student_anon_df$StudentID_Anon
 course_item_activity$StudentID_Anon %in% sis$StudentID_Anon
 ```
 
+
 ## Filter roles
 
 ```{r}
@@ -160,12 +191,37 @@ course_item_activityt <- course_item_activity %>%
 forum_submissions <- forum_submissions %>%
   select(-StudentID, -UserName)
 grade_center <- grade_center %>%
-  select(-StudentID)
+  select(-StudentID, -Student)
 student_course_summary <- student_course_summary %>%
   select(-StudentID)
 sis <- sis %>%
   select(-StudentID, -EmployeeID)
 ```
+
+
+
+## Relable First Term at Institution indicator
+
+```{r}
+sis <- sis %>%
+  mutate(FirstTermAtInstitution = case_when(FirstTermAtInstitution == 1 ~ "First Term at BSU",
+                                            FirstTermAtInstitution == 0 ~ "Not in First Term at BSU"))
+```
+
+
+## Rank AcademicLevel
+
+```{r}
+sis <- sis %>%
+  mutate(AcademicLevel = case_when(AcademicLevel == "Freshman (10)" ~ "(10) Freshman",
+                                    AcademicLevel == "Sophomore (20)" ~ "(20) Sophomore",
+                                    AcademicLevel == "Junior (30)" ~ "(30) Junior",
+                                    AcademicLevel == "Senior (40)" ~ "(40) Senior",
+                                    AcademicLevel == "Post-Bacc Undergraduate (50)" ~ "(50) Post-Bacc Undergraduate",
+                                    AcademicLevel == "Graduate (GR)" ~ "(60) Graduate"))
+```
+
+
 
 ## Process Academic Plan data
 
@@ -205,8 +261,8 @@ plans_10_or_more
 
 ```{r}
 sis2 <- sis %>%
-  mutate(Plan10 = ifelse(AcademicPlan %in% plans_10_or_more$AcademicPlan, AcademicPlan, "Plan w low count")) %>%
-  select(Plan10, StudentID_Anon, everything()) %>%
+  mutate(AcadPlan = ifelse(AcademicPlan %in% plans_10_or_more$AcademicPlan, AcademicPlan, "Plan w low count")) %>%
+  select(AcadPlan, StudentID_Anon, everything()) %>%
   arrange(StudentID_Anon) 
 ```
 
@@ -231,30 +287,29 @@ sis2 %>%
   filter(StudentID_Anon == 61612)
 ```
 
+
+
 #### Create plan dummies
 
 ```{r}
-sis3 <- data.frame(cbind(sis2, dummies::dummy(sis2$Plan10))) # Append dummies for Academic Plan
+sis3 <- data.frame(cbind(sis2, dummies::dummy(sis2$AcadPlan))) # Append dummies for Academic Plan
 ```
 
 #### Remove Plan column and collapse duplicates
 
 ```{r message=FALSE}
-columns_for_group <- sis2 %>%
-  select(-Plan10)
-grp_cols <- names(columns_for_group)
-grp_cols
+sis2_without_AcadPlanCol <- sis2 %>%
+  select(-AcadPlan) 
+grp_cols <- names(sis2_without_AcadPlanCol)
+
+# Convert character vector to list of symbos
+dots <- lapply(grp_cols, as.symbol)
 
 sis4 <- sis3 %>%
-  group_by(.dots = grp_cols) %>%
-  summarise(across(starts_with("Plan10."), max)) %>%
+  group_by_(.dots = dots) %>%
+  summarise(across(starts_with("AcadPlan"), max)) %>%
   ungroup()
 ```
-
-```{r}
-names(sis4)
-```
-
 
 #### Test to see if there are student-term duplicates
 
@@ -265,6 +320,24 @@ sis4 %>%
   arrange(desc(C))
 ```
 
+## Jitter grades
+
+```{r}
+sis5 <- sis4 %>%
+  mutate(ClassGrade_Jitter = jitter(as.numeric(ClassGrade))) %>%
+  mutate(P1_ClassGrade_Jitter = jitter(as.numeric(P1_ClassGrade))) %>%
+  mutate(P2_ClassGrade_Jitter = jitter(as.numeric(P2_ClassGrade))) %>%
+  mutate(P3_ClassGrade_Jitter = jitter(as.numeric(P3_ClassGrade)))
+```
+
+#### Test to see if there are student-term duplicates
+
+```{r}
+sis5 %>%
+  group_by(TermSourceKey, ClassNumberUniqueDescription, StudentID_Anon) %>%
+  summarise(C = n()) %>%
+  arrange(desc(C))
+```
 
 ## Add BISQL to A4L data
 
@@ -276,362 +349,109 @@ grade_center_sis <- left_join(grade_center, sis4, by = "StudentID_Anon")
 student_course_summary_sis <- left_join(student_course_summary, sis4, by = "StudentID_Anon")
 ```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# ********************
-
- # ***************
- 
 ```{r}
-sis %>%
-  filter(Term == "Fall 2020") %>%
-  filter(InstructionMode == "Online") %>%
-  filter(Subject == "BIOL") %>%
-  filter(CourseNumber == 227) %>%
-  filter(Section %in% c("4001", "4002")) %>%
-  filter(VersionKey == 1) %>%
-  select(VersionDescription, TermSourceKey, Term, InstructionMode, Subject, CourseNumber, ClassNumberUniqueDescription, Section, Instructor,
-         StudentID, AcademicPlan, StudentAge, BSUIPEDSEthnicity, Gender, FirstTermAtInstitution, CumulativeGPA, FirstGen, AcademicLevel,
-         HasTransferCumGPA, FullTimePartTimeDescription, 
-         EnrollStatus, EnrolledClassCount, DropCount, WithdrawCount, RegistrationAddDate, RegistrationDropDate,
-         CreditsAttempted, CreditsEarned, EarnCreditIndicator, SuccessIndicator, HasClassGrade, ClassGrade, GradeLetter, GradePoints, GradeGroup) %>%
-  distinct() %>%
-  group_by(StudentID) %>%
-  filter(C)
-  
-  
-  #group_by(StudentID) %>%
-  #summarise(C = n()) %>%
-  #arrange(desc(C))  
-  
-  filter(StudentID == 114050872)
+student_course_summary_sis %>%
+  filter(!SISGradeLetter == "No Grade Recorded")
+```
+
+
+# Write Datasets
+
+```{r}
+write.csv(sis5, "/Users/bencroft/Google Drive/Projects/Course Analytics - BIOL 227 - Fall 2019/course_data_cleaned.csv", row.names = FALSE)
 ```
 
 ```{r}
-sis %>%
-  group_by(StudentID) %>%
-  summarise(C = n()) %>%
-  arrange(desc(C))
+min(sis5$ClassGrade_Jitter)
 ```
+
+
+# Grade Analysis
 
 ```{r}
-sis %>%
-  filter(Term == "Fall 2020") %>%
-  filter(InstructionMode == "Online") %>%
-  filter(Subject == "BIOL") %>%
-  filter(CourseNumber == 227) %>%
-  filter(Section %in% c("4001", "4002")) %>%
-  filter(VersionKey == 1) %>%
-  select(VersionDescription, TermSourceKey, Term, InstructionMode, Subject, CourseNumber, ClassNumberUniqueDescription, Section, Instructor,
-         StudentID, AcademicPlan, StudentAge, BSUIPEDSEthnicity, Gender, FirstTermAtInstitution, CumulativeGPA, FirstGen, AcademicLevel,
-         HasTransferCumGPA, FullTimePartTimeDescription, 
-         EnrollStatus, EnrolledClassCount, DropCount, WithdrawCount, RegistrationAddDate, RegistrationDropDate, UniqueDescription,
-         CreditsAttempted, CreditsEarned, EarnCreditIndicator, SuccessIndicator, HasClassGrade, ClassGrade, GradeLetter, GradePoints, GradeGroup) %>%
-  distinct() %>%
-  filter(StudentID == 114063978)
+grade_center_sis$GradePercent = as.numeric(gsub("[\\%,]", "", grade_center_sis$GradePercent))
+grade_center_sis %>%
+  group_by(CourseItem)
 ```
-
-
-
-
-
-
-
-
-# Viz
-
-## Outcomes
-
-### Outcomes by Section
-
-```{r}
-student_course_summary
-```
-
-
-
-#### Bar plot
-
-```{r, fig.width = 13, fig.height = 8}
-tmp <- student_course_summary %>%
-  filter(IsEnrolledSIS == 1) %>%
-  filter(NormalizedScore > 0) %>%
-  filter(!SISGradeLetter %in% c("W", "CW", "I")) %>%
-  filter(CourseRole == "Student") %>%
-  filter(Course != "Fa20 - BIOL 227 - Honors LECTURE Human Anatomy & Physiology I") %>%
-  left_join(main, by = c("Course" = "COURSE_NAME")) %>%
-  mutate(Section = as.character(Section)) %>%
-  select(Term, CourseNumber, Section, UniqueDescription, InstructionMethod.x, Instructor, Student, NormalizedScore, SISClassLevel) %>%
-  mutate(InstructorLast = word(Instructor, 1)) %>%
-  mutate(CourseNumberSectionInstructor = paste0(CourseNumber, " ", Section, " ", InstructorLast)) %>%
-  mutate(CourseNumberSectionInstructor = gsub(",", "", CourseNumberSectionInstructor)) %>%
-  arrange(Student)
-
-tmp$SISClassLevel <- factor(tmp$SISClassLevel, levels = c("Freshman", "Sophomore", "Junior", "Senior", "Post-Bacc Undergraduate", "Graduate", "No SIS Match"))
-  
-tmp %>%
-  group_by(Student) %>%
-  summarise(C = n()) %>%
-  arrange(desc(C))
-
-tmp
-
-```
-
-#### Ridges
-
-```{r, fig.width = 13, fig.height = 8}
-tmp <- student_course_summary %>%
-  filter(IsEnrolledSIS == 1) %>%
-  filter(NormalizedScore > 0) %>%
-  filter(!SISGradeLetter %in% c("W", "CW", "I")) %>%
-  filter(CourseRole == "Student") %>%
-  filter(Course != "Fa20 - BIOL 227 - Honors LECTURE Human Anatomy & Physiology I") %>%
-  left_join(main, by = c("Course" = "COURSE_NAME")) %>%
-  mutate(Section = as.character(Section)) %>%
-  select(Term, CourseNumber, Section, UniqueDescription, InstructionMethod.x, Instructor, Student, NormalizedScore, SISClassLevel) %>%
-  mutate(InstructorLast = word(Instructor, 1)) %>%
-  mutate(CourseNumberSectionInstructor = paste0(CourseNumber, " ", Section, " ", InstructorLast)) %>%
-  mutate(CourseNumberSectionInstructor = gsub(",", "", CourseNumberSectionInstructor)) %>%
-  arrange(Student)
-
-tmp$SISClassLevel <- factor(tmp$SISClassLevel, levels = c("Freshman", "Sophomore", "Junior", "Senior", "Post-Bacc Undergraduate", "Graduate", "No SIS Match"))
-  
-tmp %>%
-  group_by(Student) %>%
-  summarise(C = n()) %>%
-  arrange(desc(C))
-
-tmp
-
-
-ggplot(tmp, aes(x = NormalizedScore, y = Section, fill = Section, color = Section)) +
-    geom_density_ridges(scale = 4, alpha = 0.5) +
-    
-    scale_x_continuous(expand = c(0, 0), limits = c(0, 110)) +   # for both axes to remove unneeded padding
-    #scale_y_discrete(expand = c(0, 0)) +     # will generally have to set the `expand` option
-    coord_cartesian(clip = "off") + # to avoid clipping of the very top of the top ridgeline
-    theme_ridges() +
-    scale_fill_manual(values = c("#003f5c", "#bc5090","#58508d","#ff6361", "#ffa600")) +
-    scale_color_manual(values = c("#003f5c", "#bc5090","#58508d",  "#ff6361", "#ffa600")) +
-    scale_y_discrete(limits = rev(levels(as.factor(tmp$Section)))) +
-    theme(legend.position = "bottom",
-          legend.box = "vertical",
-          legend.title = element_blank(),
-          axis.text.y = element_text(size = 11),
-          axis.text.x = element_text(size = 11),
-          axis.title.y = element_blank(),
-          axis.title.x = element_text(size = 16, color = "gray50", vjust = 0)) +
-    guides(fill=guide_legend(nrow=2, byrow = TRUE)) + 
-    scale_x_continuous(limits = c(50, 100))
-```
-
-
-### Outcomes by Major
-
-```{r, fig.height = 8, fig.width = 10}
-tmp1 <- student_course_summary %>%
-  filter(IsEnrolledSIS == 1) %>%
-  filter(NormalizedScore > 0) %>%
-  filter(!SISGradeLetter %in% c("W", "CW", "I")) %>%
-  filter(CourseRole == "Student") %>%
-  filter(Course != "Fa20 - BIOL 227 - Honors LECTURE Human Anatomy & Physiology I") %>%
-  select(SISMajor, NormalizedScore) %>%
-  group_by(SISMajor) %>%
-  summarise(Count = n()) %>%
-  arrange(desc(Count)) %>%
-  filter(Count >= 5)
-
-tmp2 <- student_course_summary %>%
-  filter(IsEnrolledSIS == 1) %>%
-  filter(NormalizedScore > 0) %>%
-  filter(!SISGradeLetter %in% c("W", "CW", "I")) %>%
-  filter(CourseRole == "Student") %>%
-  filter(Course != "Fa20 - BIOL 227 - Honors LECTURE Human Anatomy & Physiology I") %>%
-  left_join(main, by = c("Course" = "COURSE_NAME")) %>%
-  mutate(Section = as.character(Section)) %>%
-  select(Term, CourseNumber, Section, UniqueDescription, InstructionMethod.x, Instructor, Student, NormalizedScore, SISMajor) %>%
-  mutate(InstructorLast = word(Instructor, 1)) %>%
-  mutate(CourseNumberSectionInstructor = paste0(CourseNumber, " ", Section, " ", InstructorLast)) %>%
-  mutate(CourseNumberSectionInstructor = gsub(",", "", CourseNumberSectionInstructor)) %>%
-  select(SISMajor, NormalizedScore) %>%
-  filter(SISMajor %in% tmp1$SISMajor)
-  # group_by(SISMajor) %>%
-  # summarise(Count = n(), 
-  #           GradePercent_Mean = mean(NormalizedScore), 
-  #           GradePercent_Median = median(NormalizedScore), 
-  #           GradePercent_SD = sd(NormalizedScore)) %>%
-  # arrange(desc(Count)) %>%
-  # filter(Count >= 5)
-
-# Create plot
-tmp2 %>%
-  ggplot(aes(y = NormalizedScore, x = SISMajor)) +
-  geom_boxplot(aes(fill = SISMajor)) +
-  geom_jitter(width = 0.10) +
-  my_theme() +
-  labs(
-    #title = "Course Outcomes by Student Credit Load", 
-       y = "Course Grade (Percent)", 
-       x = "", 
-       color = "Credit Load",
-       #subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
-       caption = "Note: This dataset excludes students who withdrew or had an incomplete term \n Plans include 5 or more (duplicated) students.") +
-  #scale_fill_manual(values = c("#009DD9", "#999999")) +
-  theme(legend.position = "") +
-  scale_y_continuous(limits = c(0, 100)) +
-  #facet_wrap(~CourseNumberSectionInstructor) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 0.5)) +
-  theme(axis.text.x = element_blank()) +
-  theme(legend.position = "left")
-```
-
-
-
-### Outcomes by Class Level
-
-```{r, fig.width = 13, fig.height = 8}
-tmp <- student_course_summary %>%
-  filter(IsEnrolledSIS == 1) %>%
-  filter(NormalizedScore > 0) %>%
-  filter(!SISGradeLetter %in% c("W", "CW", "I")) %>%
-  filter(CourseRole == "Student") %>%
-  filter(Course != "Fa20 - BIOL 227 - Honors LECTURE Human Anatomy & Physiology I") %>%
-  left_join(main, by = c("Course" = "COURSE_NAME")) %>%
-  mutate(Section = as.character(Section)) %>%
-  select(Term, CourseNumber, Section, UniqueDescription, InstructionMethod.x, Instructor, Student, NormalizedScore, SISClassLevel) %>%
-  mutate(InstructorLast = word(Instructor, 1)) %>%
-  mutate(CourseNumberSectionInstructor = paste0(CourseNumber, " ", Section, " ", InstructorLast)) %>%
-  mutate(CourseNumberSectionInstructor = gsub(",", "", CourseNumberSectionInstructor)) %>%
-  arrange(Student)
-
-tmp$SISClassLevel <- factor(tmp$SISClassLevel, levels = c("Freshman", "Sophomore", "Junior", "Senior", "Post-Bacc Undergraduate", "Graduate", "No SIS Match"))
-  
-tmp %>%
-  group_by(Student) %>%
-  summarise(C = n()) %>%
-  arrange(desc(C))
-
-tmp
-
-# Create plot
-tmp %>%
-  ggplot(aes(y = NormalizedScore, x = SISClassLevel)) +
-  geom_boxplot(aes(fill = SISClassLevel)) +
-  geom_jitter(width = 0.10) +
-  my_theme() +
-  labs(
-    #title = "Course Outcomes by Student Credit Load", 
-       y = "Course Grade (Percent)", 
-       x = "", 
-       color = "Credit Load",
-       #subtitle = "Summer 2020 BIOL 228 | Section 4001 and 4002",
-       caption = "Note: This dataset excludes students who withdrew or had an incomplete term") +
-  #scale_fill_manual(values = c("#009DD9", "#999999")) +
-  theme(legend.position = "") +
-  scale_y_continuous(limits = c(0, 100)) +
-  facet_wrap(~CourseNumberSectionInstructor) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 0.5)) +
-  theme(axis.text.x = element_blank()) +
-  theme(legend.position = "top")
-```
-
-
-## Items
-
-
 
 
 ```{r}
-dummy <- function(data, col) {
-    for(c in col) {
-        idx <- which(names(data)==c)
-        v <- data[[idx]]
-        stopifnot(class(v)=="factor")
-        m <- matrix(0, nrow=nrow(data), ncol=nlevels(v))
-        m[cbind(seq_along(v), as.integer(v))]<-1
-        colnames(m) <- paste(c, levels(v), sep="_")
-        r <- data.frame(m)
-        if ( idx>1 ) {
-            r <- cbind(data[1:(idx-1)],r)
-        }
-        if ( idx<ncol(data) ) {
-            r <- cbind(r, data[(idx+1):ncol(data)])
-        }
-        data <- r
-    }
-    data
-}
-
-
-dd <- data.frame(a=runif(30),
-    b=sample(letters[1:3],30,replace=T),
-    c=rnorm(30),
-    d=sample(letters[10:13],30,replace=T)
-)
-
-dd 
-
-dd %>% dummy("b")
+grade_center_sis %>%
+  select(CourseItem, GradePercent)
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 ```{r}
-df <- data_frame(var = sample(x = letters[1:4], size = 10, replace = TRUE))
+# sis4 %>%
+  # select(starts_with("Plan10."))
+```
 
-df
+## Data
 
-df %>% 
-  mutate(unique_row_id = 1:n()) %>% #The rows need to be unique for `spread` to work.
-  mutate(dummy = 1) %>% 
-  spread(var, dummy, fill = 0)
+```{r}
+tmp <- sis4 %>%
+  #dplyr::filter(Section %in% c(4001, 4002, 4201)) %>%
+  filter(GradeSubgroup %in% c("A+/-", "B+/-", "C+/-", "D+/-", "F", "P")) %>%
+  mutate(SuccessIndicator = as.factor(SuccessIndicator))
+
+#tmp$AcademicLevel <- relevel(tmp$AcademicLevel, ref = "Sophomore (20)")
+tmp$SuccessIndicator <- relevel(tmp$SuccessIndicator, ref = "No Success")
+```
+
+
+## Plans
+
+```{r}
+mod_PlansGrade <- lm(ClassGrade ~ Plan10..BIOL + Plan10..CJ.MIN + Plan10..FAMSTD.MIN + Plan10..HEALTHSCST + 
+                       Plan10..HTHSCI.UND + Plan10..KINES.BS + Plan10..Plan.w.low.count + Plan10..PRE.BUS + Plan10..PRE.CJ + 
+                       Plan10..PRE.NURS + Plan10..PRE.RADSCI + Plan10..PSYCH.BS + Plan10..PSYCH.MIN + 
+                       Plan10..RADSCI.BS + Plan10..SPANSH.MIN + Plan10..UNIV.UND,
+           data = tmp)
+
+summary(mod_PlansGrade)
+```
+
+```{r}
+mod_PlansLikelihood <- glm(as.factor(SuccessIndicator) ~ Plan10..BIOL + Plan10..CJ.MIN + Plan10..FAMSTD.MIN + Plan10..HEALTHSCST + 
+                       Plan10..HTHSCI.UND + Plan10..KINES.BS + Plan10..Plan.w.low.count + Plan10..PRE.BUS + Plan10..PRE.CJ + 
+                       Plan10..PRE.NURS + Plan10..PRE.RADSCI + Plan10..PSYCH.BS + Plan10..PSYCH.MIN + 
+                       Plan10..RADSCI.BS + Plan10..SPANSH.MIN + Plan10..UNIV.UND,
+           data = tmp, family = binomial)
+summary(mod_PlansLikelihood)
 ```
 
 
 
 
+## Prereq 
 
+```{r}
+mod_PrereqGrade <- lm(ClassGrade ~ as.numeric(P1_ClassGrade) + as.numeric(P2_ClassGrade) + as.numeric(P3_ClassGrade),
+           data = tmp)
 
+summary(mod_PrereqGrade)
+```
 
+```{r}
+mod_PrereqLikelihood <- glm(SuccessIndicator ~ as.numeric(P1_ClassGrade) + as.numeric(P2_ClassGrade) + as.numeric(P3_ClassGrade),
+           data = tmp, family = binomial)
+summary(mod_PrereqLikelihood)
+```
 
+## Academic Level
+
+```{r}
+mod_AcademicLevelGrade <- lm(ClassGrade ~ AcademicLevel,
+           data = tmp)
+
+summary(mod_AcademicLevelGrade)
+```
+
+```{r}
+mod_AcademicLevelLikelihood <- glm(SuccessIndicator ~ as.numeric(P1_ClassGrade) + as.numeric(P2_ClassGrade) + as.numeric(P3_ClassGrade),
+           data = tmp, family = binomial)
+summary(mod_AcademicLevelLikelihood)
+```
 
 
 
