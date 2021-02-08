@@ -401,21 +401,31 @@ tmp$SuccessIndicator <- relevel(tmp$SuccessIndicator, ref = "No Success")
 
 ## Plans
 
+### Plans Model 1: Linear Grade
+
 ```{r}
-mod_PlansGrade <- lm(ClassGrade ~ Plan10..BIOL + Plan10..CJ.MIN + Plan10..FAMSTD.MIN + Plan10..HEALTHSCST + 
-                       Plan10..HTHSCI.UND + Plan10..KINES.BS + Plan10..Plan.w.low.count + Plan10..PRE.BUS + Plan10..PRE.CJ + 
-                       Plan10..PRE.NURS + Plan10..PRE.RADSCI + Plan10..PSYCH.BS + Plan10..PSYCH.MIN + 
-                       Plan10..RADSCI.BS + Plan10..SPANSH.MIN + Plan10..UNIV.UND,
+mod_PlansGrade <- lm(ClassGrade ~ AcadPlan..BIOL + AcadPlan..CJ.MIN + AcadPlan..FAMSTD.MIN + AcadPlan..HEALTHSCST + 
+                       AcadPlan..HTHSCI.UND + AcadPlan..KINES.BS + AcadPlan..Plan.w.low.count + AcadPlan..PRE.BUS + AcadPlan..PRE.CJ +              AcadPlan..PRE.NURS + AcadPlan..PRE.RADSCI + AcadPlan..PSYCH.BS +AcadPlan..PSYCH.MIN + 
+                       AcadPlan..RADSCI.BS + AcadPlan..SPANSH.MIN + AcadPlan..UNIV.UND,
            data = tmp)
 
 summary(mod_PlansGrade)
 ```
 
+### Plans THD
+
 ```{r}
-mod_PlansLikelihood <- glm(as.factor(SuccessIndicator) ~ Plan10..BIOL + Plan10..CJ.MIN + Plan10..FAMSTD.MIN + Plan10..HEALTHSCST + 
-                       Plan10..HTHSCI.UND + Plan10..KINES.BS + Plan10..Plan.w.low.count + Plan10..PRE.BUS + Plan10..PRE.CJ + 
-                       Plan10..PRE.NURS + Plan10..PRE.RADSCI + Plan10..PSYCH.BS + Plan10..PSYCH.MIN + 
-                       Plan10..RADSCI.BS + Plan10..SPANSH.MIN + Plan10..UNIV.UND,
+#tukey_plans <- aov(mod_PlansGrade)
+#tukey.test <- TukeyHSD(tukey_plans)
+```
+
+
+### Plans Model 2: Logistic Pass
+
+```{r}
+mod_PlansLikelihood <- glm(as.factor(SuccessIndicator) ~ 0 + AcadPlan..BIOL + AcadPlan..CJ.MIN + AcadPlan..FAMSTD.MIN + AcadPlan..HEALTHSCST + 
+                       AcadPlan..HTHSCI.UND + AcadPlan..KINES.BS + AcadPlan..Plan.w.low.count + AcadPlan..PRE.BUS + AcadPlan..PRE.CJ +              AcadPlan..PRE.NURS + AcadPlan..PRE.RADSCI + AcadPlan..PSYCH.BS +AcadPlan..PSYCH.MIN + 
+                       AcadPlan..RADSCI.BS + AcadPlan..SPANSH.MIN + AcadPlan..UNIV.UND,
            data = tmp, family = binomial)
 summary(mod_PlansLikelihood)
 ```
@@ -425,12 +435,16 @@ summary(mod_PlansLikelihood)
 
 ## Prereq 
 
+### Prereq Model 1: Linear Grade
+
 ```{r}
 mod_PrereqGrade <- lm(ClassGrade ~ as.numeric(P1_ClassGrade) + as.numeric(P2_ClassGrade) + as.numeric(P3_ClassGrade),
            data = tmp)
 
 summary(mod_PrereqGrade)
 ```
+
+### Prereq Model 2: Logistic Pass
 
 ```{r}
 mod_PrereqLikelihood <- glm(SuccessIndicator ~ as.numeric(P1_ClassGrade) + as.numeric(P2_ClassGrade) + as.numeric(P3_ClassGrade),
@@ -440,12 +454,16 @@ summary(mod_PrereqLikelihood)
 
 ## Academic Level
 
+### Academic Level Model 1: Linear Grade
+
 ```{r}
 mod_AcademicLevelGrade <- lm(ClassGrade ~ AcademicLevel,
            data = tmp)
 
 summary(mod_AcademicLevelGrade)
 ```
+
+### Academic Level Model 2: Logistic Pass
 
 ```{r}
 mod_AcademicLevelLikelihood <- glm(SuccessIndicator ~ as.numeric(P1_ClassGrade) + as.numeric(P2_ClassGrade) + as.numeric(P3_ClassGrade),
