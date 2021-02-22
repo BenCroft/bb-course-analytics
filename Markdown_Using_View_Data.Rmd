@@ -186,7 +186,7 @@ forum_submissions <- forum_submissions %>%
 ```{r}
 course_activity <- course_activity %>%
   select(-StudentID, -UserName)
-course_item_activityt <- course_item_activity %>%
+course_item_activity <- course_item_activity %>%
   select(-StudentID, -UserName)
 forum_submissions <- forum_submissions %>%
   select(-StudentID, -UserName)
